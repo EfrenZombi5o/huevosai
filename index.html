@@ -17,6 +17,8 @@
     --assistant-bubble-dark: #444;
     --primary: #007bff;
     --primary-dark: #0056b3;
+    --input-bg-light: #fff;
+    --input-bg-dark: #2a2a2a;
   }
   body {
     margin: 0;
@@ -87,11 +89,13 @@
     border-radius: 6px;
     border: 1px solid #ccc;
     font-size: 1em;
-    background: inherit;
-    color: inherit;
+    background: var(--input-bg-light);
+    color: var(--text-light);
   }
   #newChatName.dark {
     border-color: #555;
+    background: var(--input-bg-dark);
+    color: var(--text-dark);
   }
   #createChatBtn {
     margin-top: 0.5em;
@@ -177,11 +181,13 @@
     outline: none;
     resize: none;
     font-family: inherit;
-    background: inherit;
-    color: inherit;
+    background: var(--input-bg-light);
+    color: var(--text-light);
   }
   body.dark #prompt {
     border-color: #555;
+    background: var(--input-bg-dark);
+    color: var(--text-dark);
   }
   #prompt:focus {
     border-color: var(--primary);
@@ -218,12 +224,29 @@
     padding: 0.3em 0.5em;
     border-radius: 6px;
     border: 1px solid #ccc;
-    background: inherit;
-    color: inherit;
+    background: var(--input-bg-light);
+    color: var(--text-light);
   }
   body.dark select, body.dark input[type="text"] {
     border-color: #555;
+    background: var(--input-bg-dark);
+    color: var(--text-dark);
   }
+
+  /* Fix for select dropdown text visibility */
+  select {
+    color: inherit;
+    background-color: inherit;
+  }
+  select option {
+    color: var(--text-light);
+    background-color: var(--input-bg-light);
+  }
+  body.dark select option {
+    color: var(--text-dark);
+    background-color: var(--input-bg-dark);
+  }
+
   #darkModeToggle, #voiceToggle {
     cursor: pointer;
     background: none;
@@ -375,7 +398,7 @@
     chat.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
-      bubble.textContent = msg.text;
+      bubble.textContent =       bubble.textContent = msg.text;
       chatDiv.appendChild(bubble);
     });
     chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -395,7 +418,7 @@
   function createNewChat(name) {
     if (!name.trim()) {
       alert('Enter a chat name');
-      return
+      return;
     }
     const id = generateId();
     chats[id] = {
@@ -635,3 +658,4 @@
 
 </body>
 </html>
+
