@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Minimal AI Assistant Chat</title>
+<title>Minimal AI Assistant with Multi-Chat & Voice Toggle</title>
 <script src="https://js.puter.com/v2/"></script>
 <style>
   :root {
@@ -24,23 +24,95 @@
     background: var(--bg-light);
     color: var(--text-light);
     display: flex;
-    flex-direction: column;
     height: 100vh;
+    overflow: hidden;
   }
   body.dark {
     background: var(--bg-dark);
     color: var(--text-dark);
   }
-  #container {
+  #sidebar {
+    width: 250px;
+    background: inherit;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+  }
+  #sidebar.dark {
+    border-color: #444;
+  }
+  #chatListHeader {
+    padding: 1em;
+    font-weight: 700;
+    font-size: 1.2em;
+    border-bottom: 1px solid #ccc;
+  }
+  #chatListHeader.dark {
+    border-color: #444;
+  }
+  #chatList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5em 1em;
+  }
+  #chatList li {
+    list-style: none;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 0.3em;
+    background: var(--assistant-bubble-light);
+    color: var(--text-light);
+    font-weight: 600;
+    user-select: none;
+  }
+  #chatList li.dark {
+    background: var(--assistant-bubble-dark);
+    color: var(--text-dark);
+  }
+  #chatList li.active {
+    background: var(--primary);
+    color: white;
+  }
+  #newChatForm {
+    padding: 0.5em 1em;
+    border-top: 1px solid #ccc;
+  }
+  #newChatForm.dark {
+    border-color: #444;
+  }
+  #newChatName {
+    width: 100%;
+    padding: 0.4em 0.6em;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+    background: inherit;
+    color: inherit;
+  }
+  #newChatName.dark {
+    border-color: #555;
+  }
+  #createChatBtn {
+    margin-top: 0.5em;
+    width: 100%;
+    padding: 0.5em;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  #createChatBtn:hover {
+    background-color: var(--primary-dark);
+  }
+
+  #main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    max-width: 700px;
-    margin: auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background: inherit;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
   #chat {
     flex: 1;
@@ -49,6 +121,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75em;
+    background: inherit;
   }
   .bubble {
     max-width: 70%;
@@ -78,11 +151,22 @@
     background-color: var(--assistant-bubble-dark);
     color: var(--text-dark);
   }
+
+  #status {
+    font-size: 0.9em;
+    color: gray;
+    padding: 0 1em 0.5em;
+    min-height: 1.2em;
+  }
+
   #input-area {
     display: flex;
-    padding: 0.5em;
+    padding: 0.5em 1em;
     border-top: 1px solid #ccc;
     background: inherit;
+  }
+  body.dark #input-area {
+    border-color: #444;
   }
   #prompt {
     flex: 1;
@@ -95,6 +179,9 @@
     font-family: inherit;
     background: inherit;
     color: inherit;
+  }
+  body.dark #prompt {
+    border-color: #555;
   }
   #prompt:focus {
     border-color: var(--primary);
@@ -113,12 +200,18 @@
   button:hover {
     background-color: var(--primary-dark);
   }
+
   #controls {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
     padding: 0.5em 1em;
     border-top: 1px solid #ccc;
     background: inherit;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+  body.dark #controls {
+    border-color: #444;
   }
   select, input[type="text"] {
     font-size: 1em;
@@ -131,42 +224,43 @@
   body.dark select, body.dark input[type="text"] {
     border-color: #555;
   }
-  #darkModeToggle {
+  #darkModeToggle, #voiceToggle {
     cursor: pointer;
     background: none;
     border: none;
-    font-size: 1.2em;
+    font-size: 1.4em;
     color: var(--primary);
   }
-  #darkModeToggle:hover {
+  #darkModeToggle:hover, #voiceToggle:hover {
     color: var(--primary-dark);
   }
-  #status {
-    font-size: 0.9em;
-    color: gray;
-    padding: 0 1em 0.5em;
-    min-height: 1.2em;
-  }
   #imageUrl {
-    width: 100%;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
+    flex: 1 1 250px;
+  }
+  #modelSelect {
+    flex: 1 1 200px;
   }
 </style>
 </head>
 <body>
 
-<div id="container">
+<div id="sidebar">
+  <div id="chatListHeader">Chats</div>
+  <ul id="chatList"></ul>
+  <form id="newChatForm">
+    <input type="text" id="newChatName" placeholder="New chat name" autocomplete="off" />
+    <button type="submit" id="createChatBtn">Create Chat</button>
+  </form>
+</div>
+
+<div id="main">
   <div id="chat"></div>
-
   <div id="status"></div>
-
   <div id="input-area">
     <textarea id="prompt" rows="2" placeholder="Type your message..."></textarea>
     <button id="voiceInputBtn" title="Voice Input">🎤</button>
     <button id="sendBtn" title="Send Message">➡️</button>
   </div>
-
   <div id="controls">
     <input type="text" id="imageUrl" placeholder="Optional image URL to analyze" />
     <select id="modelSelect" title="Select AI Model">
@@ -188,11 +282,16 @@
       </optgroup>
     </select>
     <button id="generateImageBtn" title="Generate Image">🖼️</button>
+    <button id="voiceToggle" title="Toggle Assistant Voice">🔊</button>
     <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
   </div>
 </div>
 
 <script>
+  // Elements
+  const chatListEl = document.getElementById('chatList');
+  const newChatForm = document.getElementById('newChatForm');
+  const newChatNameInput = document.getElementById('newChatName');
   const chatDiv = document.getElementById('chat');
   const promptInput = document.getElementById('prompt');
   const sendBtn = document.getElementById('sendBtn');
@@ -201,24 +300,79 @@
   const modelSelect = document.getElementById('modelSelect');
   const generateImageBtn = document.getElementById('generateImageBtn');
   const darkModeToggle = document.getElementById('darkModeToggle');
+  const voiceToggle = document.getElementById('voiceToggle');
   const statusDiv = document.getElementById('status');
+  const sidebar = document.getElementById('sidebar');
 
+  // State
+  let chats = {};
+  let currentChatId = null;
   let recognition = null;
   let isListening = false;
   let synth = window.speechSynthesis;
+  let assistantVoiceEnabled = true;
 
-  // Chat history in memory (no multi-chat for minimal version)
-  let messages = [];
+  // Load chats from localStorage
+  function loadChats() {
+    const saved = localStorage.getItem('personal_ai_chats');
+    if (saved) {
+      try {
+        chats = JSON.parse(saved);
+      } catch {
+        chats = {};
+      }
+    }
+  }
 
-  function addMessage(role, text) {
-    messages.push({role, text});
-    if (messages.length > 50) messages.shift(); // keep last 50
+  // Save chats to localStorage
+  function saveChats() {
+    localStorage.setItem('personal_ai_chats', JSON.stringify(chats));
+  }
+
+  // Generate unique ID
+  function generateId() {
+    return 'chat_' + Math.random().toString(36).slice(2, 10);
+  }
+
+  // Render chat list
+  function renderChatList() {
+    chatListEl.innerHTML = '';
+    for (const [id, chat] of Object.entries(chats)) {
+      const li = document.createElement('li');
+      li.textContent = chat.name;
+      li.dataset.chatId = id;
+      li.classList.toggle('active', id === currentChatId);
+      if(document.body.classList.contains('dark')) li.classList.add('dark');
+      li.addEventListener('click', () => switchChat(id));
+      chatListEl.appendChild(li);
+    }
+  }
+
+  // Switch chat
+  function switchChat(id) {
+    if (!chats[id]) return;
+    currentChatId = id;
+    renderChatList();
+    loadChatToUI();
+  }
+
+  // Load chat messages and model
+  function loadChatToUI() {
+    if (!currentChatId) return;
+    const chat = chats[currentChatId];
+    promptInput.value = '';
+    imageUrlInput.value = '';
+    modelSelect.value = chat.model || 'deepseek-chat';
+    statusDiv.textContent = '';
     renderMessages();
   }
 
+  // Render messages
   function renderMessages() {
+    if (!currentChatId) return;
     chatDiv.innerHTML = '';
-    messages.forEach(msg => {
+    const chat = chats[currentChatId];
+    chat.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
       bubble.textContent = msg.text;
@@ -227,6 +381,46 @@
     chatDiv.scrollTop = chatDiv.scrollHeight;
   }
 
+  // Add message to current chat
+  function addMessage(role, text) {
+    if (!currentChatId) return;
+    const chat = chats[currentChatId];
+    chat.messages.push({role, text});
+    if (chat.messages.length > 50) chat.messages.shift();
+    saveChats();
+    renderMessages();
+  }
+
+  // Create new chat
+  function createNewChat(name) {
+    if (!name.trim()) {
+      alert('Enter a chat name');
+      return
+    }
+    const id = generateId();
+    chats[id] = {
+      name: name.trim(),
+      messages: [],
+      model: 'deepseek-chat'
+    };
+    saveChats();
+    switchChat(id);
+    newChatNameInput.value = '';
+  }
+
+  // Build context prompt from chat history + new user message
+  function buildContextPrompt(newUserMessage) {
+    if (!currentChatId) return newUserMessage;
+    const chat = chats[currentChatId];
+    let context = '';
+    chat.messages.forEach(msg => {
+      context += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.text}\n`;
+    });
+    context += `User: ${newUserMessage}\nAssistant:`;
+    return context;
+  }
+
+  // Send user query and stream assistant response
   async function sendQuery() {
     const prompt = promptInput.value.trim();
     const imageUrl = imageUrlInput.value.trim();
@@ -241,13 +435,21 @@
     promptInput.value = '';
     statusDiv.textContent = 'Thinking...';
 
+    // Save model selection
+    if (currentChatId) {
+      chats[currentChatId].model = model;
+      saveChats();
+    }
+
     try {
       let responseStream;
       if (imageUrl) {
         const fullPrompt = prompt || 'Describe this image';
-        responseStream = await puter.ai.chat(fullPrompt, imageUrl, {model, stream: true});
+        const contextPrompt = buildContextPrompt(fullPrompt);
+        responseStream = await puter.ai.chat(contextPrompt, imageUrl, { model, stream: true });
       } else {
-        responseStream = await puter.ai.chat(prompt, {model, stream: true});
+        const contextPrompt = buildContextPrompt(prompt);
+        responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
       }
 
       let assistantReply = '';
@@ -262,13 +464,22 @@
           chatDiv.scrollTop = chatDiv.scrollHeight;
         }
       }
+
+      // Update message with full reply
+      const chat = chats[currentChatId];
+      chat.messages[chat.messages.length - 1].text = assistantReply;
+      saveChats();
+
       statusDiv.textContent = 'Done.';
-      speakText(assistantReply);
+
+      if (assistantVoiceEnabled) speakText(assistantReply);
+
     } catch (e) {
       statusDiv.textContent = 'Error: ' + e.message;
     }
   }
 
+  // Generate image from prompt
   async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
@@ -293,6 +504,7 @@
     }
   }
 
+  // Voice recognition setup
   function setupVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       voiceInputBtn.disabled = true;
@@ -327,12 +539,14 @@
     };
   }
 
+  // Toggle voice input listening
   function toggleVoiceInput() {
     if (!recognition) return;
     if (isListening) recognition.stop();
     else recognition.start();
   }
 
+  // Text-to-speech for assistant voice
   function speakText(text) {
     if (!synth) return;
     if (synth.speaking) synth.cancel();
@@ -342,8 +556,27 @@
     synth.speak(utterance);
   }
 
+  // Toggle assistant voice on/off
+  function toggleAssistantVoice() {
+    assistantVoiceEnabled = !assistantVoiceEnabled;
+    voiceToggle.textContent = assistantVoiceEnabled ? '🔊' : '🔈';
+    localStorage.setItem('assistantVoiceEnabled', assistantVoiceEnabled ? 'true' : 'false');
+  }
+
+  // Load assistant voice preference
+  function loadAssistantVoicePref() {
+    const val = localStorage.getItem('assistantVoiceEnabled');
+    assistantVoiceEnabled = val !== 'false'; // default true
+    voiceToggle.textContent = assistantVoiceEnabled ? '🔊' : '🔈';
+  }
+
+  // Dark mode toggle
   function toggleDarkMode() {
     document.body.classList.toggle('dark');
+    sidebar.classList.toggle('dark');
+    newChatNameInput.classList.toggle('dark');
+    newChatForm.classList.toggle('dark');
+    chatListEl.querySelectorAll('li').forEach(li => li.classList.toggle('dark'));
     if (document.body.classList.contains('dark')) {
       darkModeToggle.textContent = '☀️';
       localStorage.setItem('darkMode', 'true');
@@ -353,21 +586,42 @@
     }
   }
 
+  // Load dark mode preference
   function loadDarkMode() {
     if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark');
+      sidebar.classList.add('dark');
+      newChatNameInput.classList.add('dark');
+      newChatForm.classList.add('dark');
       darkModeToggle.textContent = '☀️';
     } else {
       darkModeToggle.textContent = '🌙';
     }
   }
 
+  // Initialize app
+  function init() {
+    loadChats();
+    if (Object.keys(chats).length === 0) {
+      createNewChat('Default Chat');
+    } else {
+      switchChat(Object.keys(chats)[0]);
+    }
+    setupVoiceRecognition();
+    loadDarkMode();
+    loadAssistantVoicePref();
+  }
+
   // Event listeners
+  newChatForm.addEventListener('submit', e => {
+    e.preventDefault();
+    createNewChat(newChatNameInput.value);
+  });
   sendBtn.addEventListener('click', sendQuery);
   generateImageBtn.addEventListener('click', generateImage);
   voiceInputBtn.addEventListener('click', toggleVoiceInput);
   darkModeToggle.addEventListener('click', toggleDarkMode);
-
+  voiceToggle.addEventListener('click', toggleAssistantVoice);
   promptInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -375,9 +629,8 @@
     }
   });
 
-  // Initialize
-  setupVoiceRecognition();
-  loadDarkMode();
+  // Run
+  init();
 </script>
 
 </body>
