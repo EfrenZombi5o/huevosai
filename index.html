@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Personal AI Assistant with Multi-Chat & Memory</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 1em auto;
+    display: flex;
+    height: 90vh;
+  }
+  #chatList {
+    width: 220px;
+    border-right: 1px solid #ccc;
+    padding: 1em;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  #chatList h2 {
+    margin-top: 0;
+  }
+  #chatList button, #chatList input {
+    width: 100%;
+    margin-bottom: 0.5em;
+    padding: 0.5em;
+    box-sizing: border-box;
+  }
+  #chatList ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #chatList li {
+    padding: 0.5em;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #chatList li.active {
+    background-color: #007bff;
+    color: white;
+  }
+  #mainArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1em;
+    box-sizing: border-box;
+  }
+  label {
+    font-weight: bold;
+  }
+  textarea, input[type="text"], select {
+    width: 100%;
+    padding: 0.5em;
+    margin-top: 0.25em;
+    margin-bottom: 1em;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  #output {
+    white-space: pre-wrap;
+    border: 1px solid #ccc;
+    padding: 1em;
+    min-height: 200px;
+    background: #f9f9f9;
+    overflow-y: auto;
+    flex-grow: 1;
+    margin-bottom: 1em;
+  }
+  #imageOutput img {
+    max-width: 100%;
+    margin-top: 1em;
+    border: 1px solid #ccc;
+  }
+  #status {
+    font-style: italic;
+    color: gray;
+    margin-bottom: 1em;
+  }
+  #buttons {
+    margin-bottom: 1em;
+  }
+  button {
+    padding: 0.5em 1em;
+    margin-right: 0.5em;
+    font-size: 1em;
+  }
+</style>
+</head>
+<body>
+
+<div id="chatList">
+  <h2>Chats</h2>
+  <input type="text" id="newChatName" placeholder="New chat name" />
+  <button id="createChatBtn">Create New Chat</button>
+  <ul id="chatsUl"></ul>
+</div>
+
+<div id="mainArea">
+  <label for="prompt">Enter your question or request:</label>
+  <textarea id="prompt" placeholder="Ask me anything..."></textarea>
+
+  <label for="imageUrl">Optional: Enter an image URL to analyze (GPT-4o Vision):</label>
+  <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg" />
+
+  <label for="modelSelect">Choose AI model:</label>
+  <select id="modelSelect">
+    <optgroup label="DeepSeek Models">
+      <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
+      <option value="deepseek-reasoner">DeepSeek Reasoner (DeepSeek R1)</option>
+    </optgroup>
+    <optgroup label="Gemini Models">
+      <option value="google/gemini-2.5-pro-exp-03-25:free">Gemini 2.5 Pro</option>
+      <option value="google/gemini-2.0-flash-lite-001">Gemini 2.0 Flash Lite</option>
+      <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash</option>
+    </optgroup>
+    <optgroup label="OpenAI-Compatible Models">
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="gpt-4.1">GPT-4.1</option>
+      <option value="o3-mini">o3-mini</option>
+      <option value="o1-mini">o1-mini</option>
+      <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
+    </optgroup>
+  </select>
+
+  <div id="buttons">
+    <button id="runBtn">Run Text Query</button>
+    <button id="generateImageBtn">Generate Image (DALL-E 3)</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="output"></div>
+  <div id="imageOutput"></div>
+</div>
+
+<script>
+  // Storage keys
+  const STORAGE_KEY = 'personal_ai_chats';
+
+  // DOM elements
+  const chatsUl = document.getElementById('chatsUl');
+  const newChatNameInput = document.getElementById('newChatName');
+  const createChatBtn = document.getElementById('createChatBtn');
+  const promptInput = document.getElementById('prompt');
+  const imageUrlInput = document.getElementById('imageUrl');
+  const modelSelect = document.getElementById('modelSelect');
+  const outputDiv = document.getElementById('output');
+  const imageOutputDiv = document.getElementById('imageOutput');
+  const statusDiv = document.getElementById('status');
+  const runBtn = document.getElementById('runBtn');
+  const generateImageBtn = document.getElementById('generateImageBtn');
+
+  // State
+  let chats = {}; // { chatId: { name, messages: [{role:'user'|'assistant', content}], model } }
+  let currentChatId = null;
+
+  // Load chats from localStorage
+  function loadChats() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        chats = JSON.parse(saved);
+      } catch {
+        chats = {};
+      }
+    }
+  }
+
+  // Save chats to localStorage
+  function saveChats() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+  }
+
+  // Generate unique ID
+  function generateId() {
+    return 'chat_' + Math.random().toString(36).slice(2, 10);
+  }
+
+  // Render chat list
+  function renderChatList() {
+    chatsUl.innerHTML = '';
+    for (const [id, chat] of Object.entries(chats)) {
+      const li = document.createElement('li');
+      li.textContent = chat.name;
+      li.dataset.chatId = id;
+      li.classList.toggle('active', id === currentChatId);
+      li.title = 'Click to switch chat';
+      li.addEventListener('click', () => {
+        switchChat(id);
+      });
+      chatsUl.appendChild(li);
+    }
+  }
+
+  // Switch to a chat by id
+  function switchChat(id) {
+    if (!chats[id]) return;
+    currentChatId = id;
+    renderChatList();
+    loadChatToUI();
+  }
+
+  // Load current chat messages and model to UI
+  function loadChatToUI() {
+    if (!currentChatId) return;
+    const chat = chats[currentChatId];
+    promptInput.value = '';
+    imageUrlInput.value = '';
+    modelSelect.value = chat.model || 'deepseek-chat';
+    outputDiv.textContent = '';
+    imageOutputDiv.innerHTML = '';
+    statusDiv.textContent = '';
+    renderChatMessages();
+  }
+
+  // Render chat messages in outputDiv
+  function renderChatMessages() {
+    if (!currentChatId) return;
+    const chat = chats[currentChatId];
+    outputDiv.textContent = '';
+    for (const msg of chat.messages) {
+      const prefix = msg.role === 'user' ? 'You: ' : 'Assistant: ';
+      outputDiv.textContent += prefix + msg.content + '\n\n';
+    }
+    outputDiv.scrollTop = outputDiv.scrollHeight;
+  }
+
+  // Create new chat
+  function createNewChat(name) {
+    if (!name.trim()) {
+      alert('Please enter a chat name.');
+      return;
+    }
+    const id = generateId();
+    chats[id] = {
+      name: name.trim(),
+      messages: [],
+      model: 'deepseek-chat'
+    };
+    saveChats();
+    switchChat(id);
+    newChatNameInput.value = '';
+  }
+
+  // Add message to current chat
+  function addMessage(role, content) {
+    if (!currentChatId) return;
+    const chat = chats[currentChatId];
+    chat.messages.push({ role, content });
+    // Keep only last 20 messages
+    if (chat.messages.length > 20) {
+      chat.messages = chat.messages.slice(chat.messages.length - 20);
+    }
+    saveChats();
+  }
+
+  // Build context prompt by concatenating last messages with roles
+  function buildContextPrompt(newUserMessage) {
+    if (!currentChatId) return newUserMessage;
+    const chat = chats[currentChatId];
+    let context = '';
+    for (const msg of chat.messages) {
+      if (msg.role === 'user') {
+        context += `User: ${msg.content}\n`;
+      } else if (msg.role === 'assistant') {
+        context += `Assistant: ${msg.content}\n`;
+      }
+    }
+    context += `User: ${newUserMessage}\nAssistant:`;
+    return context;
+  }
+
+  // Run text query with streaming
+  async function runTextQuery() {
+    const prompt = promptInput.value.trim();
+    const imageUrl = imageUrlInput.value.trim();
+    const model = modelSelect.value;
+
+    if (!prompt && !imageUrl) {
+      alert('Please enter a prompt or an image URL to analyze.');
+      return;
+    }
+
+    outputDiv.textContent = '';
+    imageOutputDiv.innerHTML = '';
+    statusDiv.textContent = 'Loading...';
+
+    // Save selected model to chat
+    if (currentChatId) {
+      chats[currentChatId].model = model;
+      saveChats();
+    }
+
+    try {
+      let responseStream;
+
+      if (imageUrl) {
+        // Analyze image with GPT-4o Vision (image URL as second param)
+        const contextPrompt = prompt || "Describe this image";
+        const fullPrompt = buildContextPrompt(contextPrompt);
+        responseStream = await puter.ai.chat(fullPrompt, imageUrl, { model, stream: true });
+      } else {
+        // Text-only query with context
+        const fullPrompt = buildContextPrompt(prompt);
+        responseStream = await puter.ai.chat(fullPrompt, { model, stream: true });
+      }
+
+      // Add user message to history
+      if (prompt) addMessage('user', prompt);
+      if (imageUrl) addMessage('user', `[Image URL] ${imageUrl}`);
+
+      let assistantReply = '';
+      for await (const part of responseStream) {
+        if (part?.text) {
+          assistantReply += part.text;
+          outputDiv.textContent += part.text;
+          outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+      }
+      addMessage('assistant', assistantReply);
+      statusDiv.textContent = 'Done.';
+      renderChatMessages();
+    } catch (error) {
+      console.error(error);
+      statusDiv.textContent = 'Error occurred. Please try again.';
+    }
+  }
+
+  // Generate image from prompt
+  async function generateImage() {
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+      alert('Please enter a prompt to generate an image.');
+      return;
+    }
+
+    outputDiv.textContent = '';
+    imageOutputDiv.innerHTML = '';
+    statusDiv.textContent = 'Generating image...';
+
+    try {
+      const imageElement = await puter.ai.txt2img(prompt);
+      imageOutputDiv.appendChild(imageElement);
+      statusDiv.textContent = 'Image generated.';
+      // Save prompt and note image generation in chat history
+      addMessage('user', prompt);
+      addMessage('assistant', '[Image generated]');
+      renderChatMessages();
+    } catch (error) {
+      console.error(error);
+      statusDiv.textContent = 'Error generating image. Please try again.';
+    }
+  }
+
+  // Initialize app
+  function init() {
+    loadChats();
+    if (Object.keys(chats).length === 0) {
+      // Create default chat
+      createNewChat('Default Chat');
+    } else {
+      // Load first chat
+      switchChat(Object.keys(chats)[0]);
+    }
+  }
+
+  createChatBtn.addEventListener('click', () => {
+    createNewChat(newChatNameInput.value);
+  });
+
+  runBtn.addEventListener('click', runTextQuery);
+  generateImageBtn.addEventListener('click', generateImage);
+
+  // Optional: Enter key submits query when focus is in prompt textarea
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      runTextQuery();
+    }
+  });
+
+  // Start the app
+  init();
+</script>
+
+</body>
+</html>
