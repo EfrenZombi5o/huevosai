@@ -6,8 +6,6 @@ const chatDiv = document.getElementById('chat');
 const promptInput = document.getElementById('prompt');
 const sendBtn = document.getElementById('sendBtn');
 const voiceInputBtn = document.getElementById('voiceInputBtn');
-const imageUploadInput = document.getElementById('imageUpload'); // New file input
-const imagePreviewDiv = document.getElementById('imagePreview'); // Optional preview container
 const modelSelect = document.getElementById('modelSelect');
 const generateImageBtn = document.getElementById('generateImageBtn');
 const darkModeToggle = document.getElementById('darkModeToggle');
@@ -281,84 +279,6 @@ const debouncedHighlight = debounce(codeEl => {
     hljs.highlightElement(codeEl);
   }
 }, 150);
-
-// Add image preview when user selects a file
-imageUploadInput.addEventListener('change', () => {
-  imagePreviewDiv.innerHTML = ''; // Clear previous preview
-  const file = imageUploadInput.files[0];
-  if (file) {
-    const img = document.createElement('img');
-    img.style.maxWidth = '100%';
-    img.style.borderRadius = '8px';
-    img.src = URL.createObjectURL(file);
-    imagePreviewDiv.appendChild(img);
-  }
-});
-
-// Send user query and stream assistant response with incremental update
-async function sendQuery() {
-  const prompt = promptInput.value.trim();
-  const imageFile = imageUploadInput.files[0]; // Get uploaded file
-  const model = modelSelect.value;
-
-  if (!prompt && !imageFile) {
-    alert('Please enter a message or upload an image.');
-    return;
-  }
-
-  addMessage('user', prompt || '[Image uploaded]');
-  promptInput.value = '';
-  imageUploadInput.value = ''; // Clear file input
-  imagePreviewDiv.innerHTML = ''; // Clear preview
-  statusDiv.textContent = 'Thinking...';
-  await renderMessages();
-
-  if (currentChatId) {
-    chats[currentChatId].model = model;
-    saveChats();
-  }
-
-  try {
-    let responseStream;
-    const fullPrompt = prompt || 'Describe this image';
-    const contextPrompt = buildContextPrompt(fullPrompt);
-
-    if (imageFile) {
-      // Pass imageFile inside options object if supported by puter.ai
-      responseStream = await puter.ai.chat(contextPrompt, { model, stream: true, imageFile });
-    } else {
-      responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
-    }
-
-    let assistantReply = '';
-
-    // Add empty assistant message placeholder
-    addMessage('assistant', '');
-    await renderMessages();
-
-    const chat = chats[currentChatId];
-    let lastMsg = chat.messages[chat.messages.length - 1];
-
-    for await (const part of responseStream) {
-      if (part?.text) {
-        assistantReply += part.text;
-        lastMsg.text = assistantReply;
-        saveChats();
-
-        await renderMessages();
-
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-      }
-    }
-
-    statusDiv.textContent = '';
-    if (assistantVoiceEnabled) speakText(assistantReply);
-
-  } catch (e) {
-    console.error('Error in sendQuery:', e);
-    statusDiv.textContent = 'Error: ' + (e.message || JSON.stringify(e));
-  }
-}
 
 // Generate image from prompt
 async function generateImage() {
