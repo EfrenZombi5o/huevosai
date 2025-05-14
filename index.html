@@ -398,7 +398,7 @@
     chat.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
-      bubble.textContent =       bubble.textContent = msg.text;
+           bubble.textContent = msg.text;
       chatDiv.appendChild(bubble);
     });
     chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -527,7 +527,7 @@
     }
   }
 
-  // Voice recognition setup
+  // Setup voice recognition
   function setupVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       voiceInputBtn.disabled = true;
@@ -658,4 +658,3 @@
 
 </body>
 </html>
-
