@@ -398,7 +398,8 @@
     chat.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
-           bubble.textContent = msg.text;
+      bubble.textContent = msg.text;
+      bubble.textContent = msg.text;
       chatDiv.appendChild(bubble);
     });
     chatDiv.scrollTop = chatDiv.scrollHeight;
