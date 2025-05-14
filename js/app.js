@@ -145,7 +145,7 @@ function parseMessageParts(text) {
   return result;
 }
 
-// Create message element supporting mixed text and code parts
+// Create message element supporting mixed text and code parts with Copy Code button
 async function createMessageElement(msg) {
   if (msg.role === 'user') {
     const bubble = document.createElement('div');
@@ -167,12 +167,51 @@ async function createMessageElement(msg) {
       p.textContent = part.content.trim();
       container.appendChild(p);
     } else if (part.type === 'code') {
+      // Wrapper div for code block + copy button
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+
+      // Copy button
+      const copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copy Code';
+      copyBtn.style.position = 'absolute';
+      copyBtn.style.top = '8px';
+      copyBtn.style.right = '8px';
+      copyBtn.style.padding = '4px 8px';
+      copyBtn.style.fontSize = '0.8em';
+      copyBtn.style.cursor = 'pointer';
+      copyBtn.style.borderRadius = '4px';
+      copyBtn.style.border = 'none';
+      copyBtn.style.backgroundColor = 'var(--primary, #007bff)';
+      copyBtn.style.color = 'white';
+      copyBtn.style.zIndex = '10';
+
+      // Code block
       const pre = document.createElement('pre');
       pre.className = 'code-box hljs';
       const code = document.createElement('code');
       if (part.lang) code.className = part.lang;
       code.textContent = part.content;
       pre.appendChild(code);
+
+      // Copy button click handler
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Code';
+          }, 1500);
+        } catch (err) {
+          copyBtn.textContent = 'Failed to copy';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Code';
+          }, 1500);
+        }
+      });
+
+      wrapper.appendChild(copyBtn);
+      wrapper.appendChild(pre);
 
       if (window.hljs) {
         hljs.highlightElement(code);
@@ -182,7 +221,7 @@ async function createMessageElement(msg) {
         }, 100);
       }
 
-      container.appendChild(pre);
+      container.appendChild(wrapper);
     }
   }
 
@@ -387,6 +426,7 @@ function showMicPermissionPrompt() {
   micPermissionPrompt.style.display = 'flex';
 }
 
+// Hide mic permission prompt
 function hideMicPermissionPrompt() {
   micPermissionPrompt.style.display = 'none';
 }
