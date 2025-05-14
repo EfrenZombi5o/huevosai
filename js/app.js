@@ -131,18 +131,20 @@ async function renderMessages() {
 
 // Create message element: bubble for text, code-box for code
 function createMessageElement(msg) {
-  if (msg.role === 'assistant' && msg.text.startsWith('```') && msg.text.endsWith('```')) {
+  const text = msg.text.trim();
+  if (msg.role === 'assistant' && text.startsWith('```') && text.endsWith('```')) {
     // Extract code content and language
-    const codeContent = msg.text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
-    const langMatch = msg.text.match(/^```(\w+)/);
+    const langMatch = text.match(/^```(\w+)/);
     const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
+    const codeContent = text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
 
     const pre = document.createElement('pre');
     pre.className = 'code-box';
     const code = document.createElement('code');
     code.className = langClass;
-    pre.appendChild(code);
     code.textContent = codeContent;
+    pre.appendChild(code);
+    Prism.highlightElement(code);
     return pre;
   } else {
     const bubble = document.createElement('div');
@@ -239,7 +241,7 @@ async function sendQuery() {
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     // For code blocks, special handling
-    const isCode = lastMsg.text.startsWith('```') && lastMsg.text.endsWith('```');
+    const isCode = lastMsg.text.trim().startsWith('```') && lastMsg.text.trim().endsWith('```');
     let codeElement = null;
     if (isCode) {
       codeElement = lastEl.querySelector('code');
@@ -396,7 +398,7 @@ function toggleDarkMode() {
     localStorage.setItem('darkMode', 'true');
   } else {
     darkModeToggle.textContent = '🌙';
-    localStorage.setItem('darkMode', 'false');
+    localStorage.setItem('darkMode',     'false');
   }
 }
 
