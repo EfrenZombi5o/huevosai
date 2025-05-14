@@ -263,6 +263,30 @@
   #modelSelect {
     flex: 1 1 200px;
   }
+
+  /* Mic permission prompt styles */
+  #micPermissionPrompt {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  #micPermissionPrompt > div {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 320px;
+    text-align: center;
+    color: #000;
+  }
+  #micPermissionPrompt button {
+    padding: 10px 20px;
+    margin: 10px 5px 0 5px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -310,6 +334,15 @@
   </div>
 </div>
 
+<!-- Mic permission prompt -->
+<div id="micPermissionPrompt">
+  <div>
+    <p>This app needs access to your microphone to enable voice input.</p>
+    <button id="allowMicBtn">Allow Microphone</button>
+    <button id="denyMicBtn">Cancel</button>
+  </div>
+</div>
+
 <script>
   // Elements
   const chatListEl = document.getElementById('chatList');
@@ -327,6 +360,11 @@
   const statusDiv = document.getElementById('status');
   const sidebar = document.getElementById('sidebar');
 
+  // Mic permission prompt elements
+  const micPermissionPrompt = document.getElementById('micPermissionPrompt');
+  const allowMicBtn = document.getElementById('allowMicBtn');
+  const denyMicBtn = document.getElementById('denyMicBtn');
+
   // State
   let chats = {};
   let currentChatId = null;
@@ -339,6 +377,7 @@
   function loadChats() {
     const saved = localStorage.getItem('personal_ai_chats');
     if (saved) {
+     
       try {
         chats = JSON.parse(saved);
       } catch {
@@ -398,7 +437,6 @@
     chat.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
-      bubble.textContent = msg.text;
       bubble.textContent = msg.text;
       chatDiv.appendChild(bubble);
     });
@@ -528,11 +566,12 @@
     }
   }
 
-  // Setup voice recognition
+  // Setup voice recognition with toggle and permission prompt
   function setupVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       voiceInputBtn.disabled = true;
-      voiceInputBtn.title = 'Voice input not supported';
+      voiceInputBtn.title = 'Voice input not supported in this browser';
+      statusDiv.textContent = 'Voice input not supported in this browser.';
       return;
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -543,7 +582,7 @@
 
     recognition.onstart = () => {
       isListening = true;
-      voiceInputBtn.textContent = '🎙️ Listening...';
+      voiceInputBtn.textContent = '🎙️ Listening... (click to stop)';
       statusDiv.textContent = 'Listening...';
     };
     recognition.onend = () => {
@@ -552,9 +591,13 @@
       statusDiv.textContent = '';
     };
     recognition.onerror = (e) => {
+      console.error('Voice input error:', e.error);
       statusDiv.textContent = 'Voice input error: ' + e.error;
       isListening = false;
       voiceInputBtn.textContent = '🎤';
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        alert('Microphone access denied. Please allow microphone permissions and reload the page.');
+      }
     };
     recognition.onresult = (e) => {
       const transcript = e.results[0][0].transcript;
@@ -563,21 +606,23 @@
     };
   }
 
-  // Toggle voice input listening
-  function toggleVoiceInput() {
-    if (!recognition) return;
-    if (isListening) recognition.stop();
-    else recognition.start();
+  // Show/hide mic permission prompt
+  function showMicPermissionPrompt() {
+    micPermissionPrompt.style.display = 'flex';
   }
 
-  // Text-to-speech for assistant voice
-  function speakText(text) {
-    if (!synth) return;
-    if (synth.speaking) synth.cancel();
-    if (!text) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    synth.speak(utterance);
+  function hideMicPermissionPrompt() {
+    micPermissionPrompt.style.display = 'none';
+  }
+
+  // Toggle voice input listening with permission prompt
+  function toggleVoiceInput() {
+    if (!recognition) return;
+    if (isListening) {
+      recognition.stop(); // user clicked to stop listening
+    } else {
+      showMicPermissionPrompt();
+    }
   }
 
   // Toggle assistant voice on/off
@@ -592,6 +637,16 @@
     const val = localStorage.getItem('assistantVoiceEnabled');
     assistantVoiceEnabled = val !== 'false'; // default true
     voiceToggle.textContent = assistantVoiceEnabled ? '🔊' : '🔈';
+  }
+
+  // Text-to-speech for assistant voice
+  function speakText(text) {
+    if (!synth) return;
+    if (synth.speaking) synth.cancel();
+    if (!text) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    synth.speak(utterance);
   }
 
   // Dark mode toggle
@@ -651,6 +706,22 @@
       e.preventDefault();
       sendQuery();
     }
+  });
+
+  // Mic permission prompt buttons
+  allowMicBtn.addEventListener('click', () => {
+    hideMicPermissionPrompt();
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Error starting recognition:', err);
+      statusDiv.textContent = 'Error starting voice recognition: ' + err.message;
+    }
+  });
+
+  denyMicBtn.addEventListener('click', () => {
+    hideMicPermissionPrompt();
+    statusDiv.textContent = 'Microphone permission denied.';
   });
 
   // Run
