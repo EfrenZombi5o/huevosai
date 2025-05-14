@@ -309,12 +309,43 @@ body.dark select option {
   color: var(--primary-dark);
 }
 
+/* --- Hide the old image URL input --- */
 #imageUrl {
-  flex: 1 1 250px;
+  display: none !important;
 }
 
-#modelSelect {
-  flex: 1 1 200px;
+/* --- Style the new image upload input --- */
+#imageUpload {
+  flex: 1 1 250px;
+  padding: 0.3em 0.5em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: var(--input-bg-light);
+  color: var(--text-light);
+  font-size: 1em;
+  cursor: pointer;
+}
+
+body.dark #imageUpload {
+  border-color: #555;
+  background: var(--input-bg-dark);
+  color: var(--text-dark);
+}
+
+/* --- Optional: style the image preview container --- */
+#imagePreview {
+  max-width: 100%;
+  margin: 0.5em 1em;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+
+#imagePreview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
 }
 
 /* Mic permission prompt styles */
