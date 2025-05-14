@@ -6,7 +6,8 @@ const chatDiv = document.getElementById('chat');
 const promptInput = document.getElementById('prompt');
 const sendBtn = document.getElementById('sendBtn');
 const voiceInputBtn = document.getElementById('voiceInputBtn');
-const imageUrlInput = document.getElementById('imageUrl');
+const imageUploadInput = document.getElementById('imageUpload'); // New file input
+const imagePreviewDiv = document.getElementById('imagePreview'); // Optional preview container
 const modelSelect = document.getElementById('modelSelect');
 const generateImageBtn = document.getElementById('generateImageBtn');
 const darkModeToggle = document.getElementById('darkModeToggle');
@@ -281,20 +282,34 @@ const debouncedHighlight = debounce(codeEl => {
   }
 }, 150);
 
+// Add image preview when user selects a file
+imageUploadInput.addEventListener('change', () => {
+  imagePreviewDiv.innerHTML = ''; // Clear previous preview
+  const file = imageUploadInput.files[0];
+  if (file) {
+    const img = document.createElement('img');
+    img.style.maxWidth = '100%';
+    img.style.borderRadius = '8px';
+    img.src = URL.createObjectURL(file);
+    imagePreviewDiv.appendChild(img);
+  }
+});
+
 // Send user query and stream assistant response with incremental update
 async function sendQuery() {
   const prompt = promptInput.value.trim();
-  const imageUrl = imageUrlInput.value.trim();
+  const imageFile = imageUploadInput.files[0]; // Get uploaded file
   const model = modelSelect.value;
 
-  if (!prompt && !imageUrl) {
-    alert('Please enter a message or image URL.');
+  if (!prompt && !imageFile) {
+    alert('Please enter a message or upload an image.');
     return;
   }
 
-  addMessage('user', prompt || '[Image URL provided]');
+  addMessage('user', prompt || '[Image uploaded]');
   promptInput.value = '';
-  imageUrlInput.value = '';
+  imageUploadInput.value = ''; // Clear file input
+  imagePreviewDiv.innerHTML = ''; // Clear preview
   statusDiv.textContent = 'Thinking...';
   await renderMessages();
 
@@ -308,9 +323,9 @@ async function sendQuery() {
     const fullPrompt = prompt || 'Describe this image';
     const contextPrompt = buildContextPrompt(fullPrompt);
 
-    if (imageUrl) {
-      // Pass imageUrl inside options object
-      responseStream = await puter.ai.chat(contextPrompt, { model, stream: true, imageUrl });
+    if (imageFile) {
+      // Pass imageFile inside options object if supported by puter.ai
+      responseStream = await puter.ai.chat(contextPrompt, { model, stream: true, imageFile });
     } else {
       responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
     }
@@ -405,7 +420,7 @@ function setupVoiceRecognition() {
     console.error('Voice input error:', e.error);
     statusDiv.textContent = 'Voice input error: ' + e.error;
     isListening = false;
-    voiceInputBtn.textContent = '🎤';
+        voiceInputBtn.textContent = '🎤';
     if (e.error === 'not-allowed' || e.error === 'permission-denied') {
       alert('Microphone access denied. Please allow microphone permissions and reload the page.');
     }
