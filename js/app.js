@@ -280,6 +280,60 @@ const debouncedHighlight = debounce(codeEl => {
   }
 }, 150);
 
+// Send user query and stream assistant response with incremental update
+async function sendQuery() {
+  const prompt = promptInput.value.trim();
+  const model = modelSelect.value;
+
+  if (!prompt) {
+    alert('Please enter a message.');
+    return;
+  }
+
+  addMessage('user', prompt);
+  promptInput.value = '';
+  statusDiv.textContent = 'Thinking...';
+  await renderMessages();
+
+  if (currentChatId) {
+    chats[currentChatId].model = model;
+    saveChats();
+  }
+
+  try {
+    const contextPrompt = buildContextPrompt(prompt);
+    const responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
+
+    let assistantReply = '';
+
+    // Add placeholder for assistant response
+    addMessage('assistant', '');
+    await renderMessages();
+
+    const chat = chats[currentChatId];
+    let lastMsg = chat.messages[chat.messages.length - 1];
+
+    for await (const part of responseStream) {
+      if (part?.text) {
+        assistantReply += part.text;
+        lastMsg.text = assistantReply;
+        saveChats();
+
+        await renderMessages();
+
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      }
+    }
+
+    statusDiv.textContent = '';
+    if (assistantVoiceEnabled) speakText(assistantReply);
+
+  } catch (e) {
+    console.error('Error in sendQuery:', e);
+    statusDiv.textContent = 'Error: ' + (e.message || JSON.stringify(e));
+  }
+}
+
 // Generate image from prompt
 async function generateImage() {
   const prompt = promptInput.value.trim();
@@ -340,7 +394,7 @@ function setupVoiceRecognition() {
     console.error('Voice input error:', e.error);
     statusDiv.textContent = 'Voice input error: ' + e.error;
     isListening = false;
-        voiceInputBtn.textContent = '🎤';
+    voiceInputBtn.textContent = '🎤';
     if (e.error === 'not-allowed' || e.error === 'permission-denied') {
       alert('Microphone access denied. Please allow microphone permissions and reload the page.');
     }
@@ -469,4 +523,3 @@ window.addEventListener('DOMContentLoaded', () => {
     statusDiv.textContent = 'Microphone permission denied.';
   });
 });
-
