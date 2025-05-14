@@ -136,8 +136,13 @@ async function createMessageElement(msg) {
     code.textContent = codeContent;
     pre.appendChild(code);
 
-    // Use highlight.js auto-detection
-    hljs.highlightElement(code);
+    if (window.hljs) {
+      hljs.highlightElement(code);
+    } else {
+      setTimeout(() => {
+        if (window.hljs) hljs.highlightElement(code);
+      }, 100);
+    }
 
     return pre;
   } else {
@@ -201,7 +206,9 @@ function buildContextPrompt(newUserMessage) {
 
 // Debounced highlight function for streaming code updates
 const debouncedHighlight = debounce(codeEl => {
-  hljs.highlightElement(codeEl);
+  if (window.hljs) {
+    hljs.highlightElement(codeEl);
+  }
 }, 150);
 
 // Send user query and stream assistant response with incremental update
@@ -405,14 +412,14 @@ function speakText(text) {
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
-  synth.speak(utterance);
+    synth.speak(utterance);
 }
 
 // Dark mode toggle
 function toggleDarkMode() {
   document.body.classList.toggle('dark');
   sidebar.classList.toggle('dark');
-    newChatForm.classList.toggle('dark');
+  newChatForm.classList.toggle('dark');
   chatListEl.querySelectorAll('li').forEach(li => li.classList.toggle('dark'));
   if (document.body.classList.contains('dark')) {
     darkModeToggle.textContent = '☀️';
@@ -436,8 +443,9 @@ function loadDarkMode() {
   }
 }
 
-// Initialize app
-function init() {
+// Initialize app and add event listeners inside DOMContentLoaded
+window.addEventListener('DOMContentLoaded', () => {
+  // Initialization
   loadChats();
   if (Object.keys(chats).length === 0) {
     createNewChat('Default Chat');
@@ -447,42 +455,38 @@ function init() {
   setupVoiceRecognition();
   loadDarkMode();
   loadAssistantVoicePref();
-}
 
-// Event listeners
-newChatForm.addEventListener('submit', e => {
-  e.preventDefault();
-  createNewChat(newChatNameInput.value);
-});
-sendBtn.addEventListener('click', sendQuery);
-generateImageBtn.addEventListener('click', generateImage);
-voiceInputBtn.addEventListener('click', toggleVoiceInput);
-darkModeToggle.addEventListener('click', toggleDarkMode);
-voiceToggle.addEventListener('click', toggleAssistantVoice);
-
-promptInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // Event listeners
+  newChatForm.addEventListener('submit', e => {
     e.preventDefault();
-    sendQuery();
-  }
-});
+    createNewChat(newChatNameInput.value);
+  });
+  sendBtn.addEventListener('click', sendQuery);
+  generateImageBtn.addEventListener('click', generateImage);
+  voiceInputBtn.addEventListener('click', toggleVoiceInput);
+  darkModeToggle.addEventListener('click', toggleDarkMode);
+  voiceToggle.addEventListener('click', toggleAssistantVoice);
 
-// Mic permission prompt buttons
-allowMicBtn.addEventListener('click', () => {
-  hideMicPermissionPrompt();
-  try {
-    recognition.start();
-  } catch (err) {
-    console.error('Error starting recognition:', err);
-    statusDiv.textContent = 'Error starting voice recognition: ' + err.message;
-  }
-});
+  promptInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendQuery();
+    }
+  });
 
-denyMicBtn.addEventListener('click', () => {
-  hideMicPermissionPrompt();
-  statusDiv.textContent = 'Microphone permission denied.';
-});
+  allowMicBtn.addEventListener('click', () => {
+    hideMicPermissionPrompt();
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Error starting recognition:', err);
+      statusDiv.textContent = 'Error starting voice recognition: ' + err.message;
+    }
+  });
 
-// Run initialization
-init();
+  denyMicBtn.addEventListener('click', () => {
+    hideMicPermissionPrompt();
+    statusDiv.textContent = 'Microphone permission denied.';
+  });
+});
 
