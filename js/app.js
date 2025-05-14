@@ -305,12 +305,13 @@ async function sendQuery() {
 
   try {
     let responseStream;
+    const fullPrompt = prompt || 'Describe this image';
+    const contextPrompt = buildContextPrompt(fullPrompt);
+
     if (imageUrl) {
-      const fullPrompt = prompt || 'Describe this image';
-      const contextPrompt = buildContextPrompt(fullPrompt);
-      responseStream = await puter.ai.chat(contextPrompt, imageUrl, { model, stream: true });
+      // Pass imageUrl inside options object
+      responseStream = await puter.ai.chat(contextPrompt, { model, stream: true, imageUrl });
     } else {
-      const contextPrompt = buildContextPrompt(prompt);
       responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
     }
 
@@ -329,7 +330,6 @@ async function sendQuery() {
         lastMsg.text = assistantReply;
         saveChats();
 
-        // Re-render all messages (or optimize to only update last message)
         await renderMessages();
 
         chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -340,7 +340,8 @@ async function sendQuery() {
     if (assistantVoiceEnabled) speakText(assistantReply);
 
   } catch (e) {
-    statusDiv.textContent = 'Error: ' + e.message;
+    console.error('Error in sendQuery:', e);
+    statusDiv.textContent = 'Error: ' + (e.message || JSON.stringify(e));
   }
 }
 
