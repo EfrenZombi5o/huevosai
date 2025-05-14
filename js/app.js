@@ -136,8 +136,6 @@ async function renderMessages() {
       chatDiv.appendChild(pre);
 
       code.textContent = codeContent;
-      Prism.highlightElement(code);
-
     } else {
       const bubble = document.createElement('div');
       bubble.className = 'bubble ' + msg.role;
@@ -145,6 +143,7 @@ async function renderMessages() {
       chatDiv.appendChild(bubble);
     }
   }
+  Prism.highlightAll();
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
@@ -208,7 +207,6 @@ function createBubble(msg) {
     return bubble;
   }
 }
-
 // Send user query and stream assistant response with incremental update
 async function sendQuery() {
   const prompt = promptInput.value.trim();
@@ -265,6 +263,7 @@ async function sendQuery() {
       codeElement.textContent = '';
     }
 
+    let highlightTimeout;
     for await (const part of responseStream) {
       if (part?.text) {
         assistantReply += part.text;
@@ -273,10 +272,12 @@ async function sendQuery() {
 
         if (isCode) {
           // Update code content inside triple backticks
-          // Extract code content without backticks
           let codeContent = assistantReply.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
           codeElement.textContent = codeContent;
-          Prism.highlightElement(codeElement);
+          clearTimeout(highlightTimeout);
+          highlightTimeout = setTimeout(() => {
+            Prism.highlightElement(codeElement);
+          }, 100);
         } else {
           lastBubble.textContent = assistantReply;
         }
@@ -397,7 +398,7 @@ function speakText(text) {
   if (synth.speaking) synth.cancel();
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-US';
+    utterance.lang = 'en-US';
   synth.speak(utterance);
 }
 
@@ -405,7 +406,7 @@ function speakText(text) {
 function toggleDarkMode() {
   document.body.classList.toggle('dark');
   sidebar.classList.toggle('dark');
-   newChatForm.classList.toggle('dark');
+  newChatForm.classList.toggle('dark');
   chatListEl.querySelectorAll('li').forEach(li => li.classList.toggle('dark'));
   if (document.body.classList.contains('dark')) {
     darkModeToggle.textContent = '☀️';
