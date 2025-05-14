@@ -169,7 +169,14 @@ async function createMessageElement(msg) {
     } else if (part.type === 'code') {
       // Wrapper div for code block + copy button
       const wrapper = document.createElement('div');
-      wrapper.style.position = 'relative';
+      wrapper.style.position = 'relative'; // inline style
+
+      // copyBtn with inline styles and event listener
+
+      wrapper.appendChild(copyBtn);
+      wrapper.appendChild(pre);
+      container.appendChild(wrapper);
+
 
       // Copy button
       const copyBtn = document.createElement('button');
