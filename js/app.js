@@ -123,34 +123,70 @@ async function loadChatToUI() {
   await renderMessages();
 }
 
-// Create message element: bubble for text, code-box for code (uses highlight.js auto-detect)
-async function createMessageElement(msg) {
-  const text = msg.text.trim();
-  if (msg.role === 'assistant' && text.startsWith('```') && text.endsWith('```')) {
-    // Extract code content without language tag
-    const codeContent = text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
+// Parse message text into parts: text and code blocks
+function parseMessageParts(text) {
+  const regex = /```(\w+)?\n([\s\S]*?)```/g;
+  let result = [];
+  let lastIndex = 0;
+  let match;
 
-    const pre = document.createElement('pre');
-    pre.className = 'code-box hljs'; // add hljs class for highlight.js styles
-    const code = document.createElement('code');
-    code.textContent = codeContent;
-    pre.appendChild(code);
-
-    if (window.hljs) {
-      hljs.highlightElement(code);
-    } else {
-      setTimeout(() => {
-        if (window.hljs) hljs.highlightElement(code);
-      }, 100);
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push({ type: 'text', content: text.slice(lastIndex, match.index) });
     }
+    result.push({ type: 'code', lang: match[1] || '', content: match[2] });
+    lastIndex = regex.lastIndex;
+  }
 
-    return pre;
-  } else {
+  if (lastIndex < text.length) {
+    result.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return result;
+}
+
+// Create message element supporting mixed text and code parts
+async function createMessageElement(msg) {
+  if (msg.role === 'user') {
     const bubble = document.createElement('div');
-    bubble.className = 'bubble ' + msg.role;
+    bubble.className = 'bubble user';
     bubble.textContent = msg.text;
     return bubble;
   }
+
+  // Assistant message: parse parts
+  const parts = parseMessageParts(msg.text);
+
+  const container = document.createElement('div');
+  container.className = 'assistant-message-container';
+
+  for (const part of parts) {
+    if (part.type === 'text') {
+      const p = document.createElement('p');
+      p.className = 'bubble assistant';
+      p.textContent = part.content.trim();
+      container.appendChild(p);
+    } else if (part.type === 'code') {
+      const pre = document.createElement('pre');
+      pre.className = 'code-box hljs';
+      const code = document.createElement('code');
+      if (part.lang) code.className = part.lang;
+      code.textContent = part.content;
+      pre.appendChild(code);
+
+      if (window.hljs) {
+        hljs.highlightElement(code);
+      } else {
+        setTimeout(() => {
+          if (window.hljs) hljs.highlightElement(code);
+        }, 100);
+      }
+
+      container.appendChild(pre);
+    }
+  }
+
+  return container;
 }
 
 // Render all messages (async due to async createMessageElement)
@@ -250,29 +286,8 @@ async function sendQuery() {
     addMessage('assistant', '');
     await renderMessages();
 
-    // Get last message and element for streaming update
     const chat = chats[currentChatId];
     let lastMsg = chat.messages[chat.messages.length - 1];
-
-    // Clear chatDiv and render all except last message
-    chatDiv.innerHTML = '';
-    for (let i = 0; i < chat.messages.length - 1; i++) {
-      const el = await createMessageElement(chat.messages[i]);
-      chatDiv.appendChild(el);
-    }
-
-    // Create last message element for streaming update
-    let lastEl = await createMessageElement(lastMsg);
-    chatDiv.appendChild(lastEl);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-
-    // Detect if last message is code block
-    const isCode = lastMsg.text.trim().startsWith('```') && lastMsg.text.trim().endsWith('```');
-    let codeElement = null;
-    if (isCode) {
-      codeElement = lastEl.querySelector('code');
-      codeElement.textContent = '';
-    }
 
     for await (const part of responseStream) {
       if (part?.text) {
@@ -280,14 +295,9 @@ async function sendQuery() {
         lastMsg.text = assistantReply;
         saveChats();
 
-        if (isCode) {
-          // Strip triple backticks for display
-          let codeContent = assistantReply.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
-          codeElement.textContent = codeContent;
-          debouncedHighlight(codeElement);
-        } else {
-          lastEl.textContent = assistantReply;
-        }
+        // Re-render all messages (or optimize to only update last message)
+        await renderMessages();
+
         chatDiv.scrollTop = chatDiv.scrollHeight;
       }
     }
@@ -412,7 +422,7 @@ function speakText(text) {
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
-    synth.speak(utterance);
+  synth.speak(utterance);
 }
 
 // Dark mode toggle
@@ -489,4 +499,3 @@ window.addEventListener('DOMContentLoaded', () => {
     statusDiv.textContent = 'Microphone permission denied.';
   });
 });
-
