@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Minimal AI Assistant with Multi-Chat & Voice Toggle & Code Typing</title>
+<title>AI Assistant with Voice & Code Typing + Chat Delete</title>
 <script src="https://js.puter.com/v2/"></script>
 
-<!-- Prism CSS for styling -->
+<!-- Prism CSS for syntax highlighting -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet" />
 
 <style>
+  /* --- Your existing styles --- */
   :root {
     --bg-light: #f9f9f9;
     --bg-dark: #121212;
@@ -62,6 +63,7 @@
     padding: 0.5em 1em;
   }
   #chatList li {
+    position: relative;
     list-style: none;
     padding: 0.5em 0.75em;
     border-radius: 6px;
@@ -80,6 +82,25 @@
     background: var(--primary);
     color: white;
   }
+
+  /* Delete button in chat list */
+  #chatList li .delete-btn {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-weight: bold;
+    color: #888;
+    cursor: pointer;
+    user-select: none;
+    font-size: 1.1em;
+    padding: 0 4px;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+  }
+  #chatList li .delete-btn:hover {
+    color: #f44336;
+  }
+
   #newChatForm {
     padding: 0.5em 1em;
     border-top: 1px solid #ccc;
@@ -310,7 +331,6 @@
 </style>
 </head>
 <body>
-
 <div id="sidebar">
   <div id="chatListHeader">Chats</div>
   <ul id="chatList"></ul>
@@ -362,7 +382,57 @@
     <button id="denyMicBtn">Cancel</button>
   </div>
 </div>
+<div id="sidebar">
+  <div id="chatListHeader">Chats</div>
+  <ul id="chatList"></ul>
+  <form id="newChatForm">
+    <input type="text" id="newChatName" placeholder="New chat name" autocomplete="off" />
+    <button type="submit" id="createChatBtn">Create Chat</button>
+  </form>
+</div>
 
+<div id="main">
+  <div id="chat"></div>
+  <div id="status"></div>
+  <div id="input-area">
+    <textarea id="prompt" rows="2" placeholder="Type your message..."></textarea>
+    <button id="voiceInputBtn" title="Voice Input">🎤</button>
+    <button id="sendBtn" title="Send Message">➡️</button>
+  </div>
+  <div id="controls">
+    <input type="text" id="imageUrl" placeholder="Optional image URL to analyze" />
+    <select id="modelSelect" title="Select AI Model">
+      <optgroup label="DeepSeek Models">
+        <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
+        <option value="deepseek-reasoner">DeepSeek Reasoner (DeepSeek R1)</option>
+      </optgroup>
+      <optgroup label="Gemini Models">
+        <option value="google/gemini-2.5-pro-exp-03-25:free">Gemini 2.5 Pro</option>
+        <option value="google/gemini-2.0-flash-lite-001">Gemini 2.0 Flash Lite</option>
+        <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash</option>
+      </optgroup>
+      <optgroup label="OpenAI-Compatible Models">
+        <option value="gpt-4o">GPT-4o</option>
+        <option value="gpt-4.1">GPT-4.1</option>
+        <option value="o3-mini">o3-mini</option>
+        <option value="o1-mini">o1-mini</option>
+        <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
+      </optgroup>
+    </select>
+    <button id="generateImageBtn" title="Generate Image">🖼️</button>
+    <button id="voiceToggle" title="Toggle Assistant Voice">🔊</button>
+    <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+  </div>
+</div>
+
+<!-- Mic permission prompt -->
+<div id="micPermissionPrompt">
+  <div>
+    <p>This app needs access to your microphone to enable voice input.</p>
+    <button id="allowMicBtn">Allow Microphone</button>
+    <button id="denyMicBtn">Cancel</button>
+  </div>
+</div>
 <!-- Prism JS -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
@@ -371,7 +441,7 @@
   // Elements
   const chatListEl = document.getElementById('chatList');
   const newChatForm = document.getElementById('newChatForm');
-  const newChatNameInput = document.getElementById('newChatName');
+    const newChatNameInput = document.getElementById('newChatName');
   const chatDiv = document.getElementById('chat');
   const promptInput = document.getElementById('prompt');
   const sendBtn = document.getElementById('sendBtn');
@@ -381,7 +451,7 @@
   const generateImageBtn = document.getElementById('generateImageBtn');
   const darkModeToggle = document.getElementById('darkModeToggle');
   const voiceToggle = document.getElementById('voiceToggle');
-  const statusDiv  = document.getElementById('status');
+  const statusDiv = document.getElementById('status');
   const sidebar = document.getElementById('sidebar');
 
   // Mic permission prompt elements
@@ -389,13 +459,16 @@
   const allowMicBtn = document.getElementById('allowMicBtn');
   const denyMicBtn = document.getElementById('denyMicBtn');
 
-  // State
+  // State variables
   let chats = {};
   let currentChatId = null;
   let recognition = null;
   let isListening = false;
   let synth = window.speechSynthesis;
   let assistantVoiceEnabled = true;
+
+  // Utility delay function
+  const delay = ms => new Promise(res => setTimeout(res, ms));
 
   // Load chats from localStorage
   function loadChats() {
@@ -414,12 +487,12 @@
     localStorage.setItem('personal_ai_chats', JSON.stringify(chats));
   }
 
-  // Generate unique ID
+  // Generate unique chat ID
   function generateId() {
     return 'chat_' + Math.random().toString(36).slice(2, 10);
   }
 
-  // Render chat list
+  // Render chat list with delete buttons
   function renderChatList() {
     chatListEl.innerHTML = '';
     for (const [id, chat] of Object.entries(chats)) {
@@ -428,12 +501,42 @@
       li.dataset.chatId = id;
       li.classList.toggle('active', id === currentChatId);
       if(document.body.classList.contains('dark')) li.classList.add('dark');
-      li.addEventListener('click', () => switchChat(id));
+
+      // Click to switch chat (ignore clicks on delete button)
+      li.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-btn')) return;
+        switchChat(id);
+      });
+
+      // Delete button
+      const delBtn = document.createElement('span');
+      delBtn.textContent = '×';
+      delBtn.className = 'delete-btn';
+      delBtn.title = 'Delete chat';
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete chat "${chat.name}"? This action cannot be undone.`)) {
+          delete chats[id];
+          saveChats();
+          if (currentChatId === id) {
+            const remainingIds = Object.keys(chats);
+            if (remainingIds.length > 0) {
+              switchChat(remainingIds[0]);
+            } else {
+              createNewChat('Default Chat');
+            }
+          } else {
+            renderChatList();
+          }
+        }
+      });
+
+      li.appendChild(delBtn);
       chatListEl.appendChild(li);
     }
   }
 
-  // Switch chat
+  // Switch to a chat by ID
   function switchChat(id) {
     if (!chats[id]) return;
     currentChatId = id;
@@ -441,7 +544,7 @@
     loadChatToUI();
   }
 
-  // Load chat messages and model
+  // Load chat messages and model into UI
   function loadChatToUI() {
     if (!currentChatId) return;
     const chat = chats[currentChatId];
@@ -451,9 +554,6 @@
     statusDiv.textContent = '';
     renderMessages();
   }
-
-  // Helper: delay function
-  const delay = ms => new Promise(res => setTimeout(res, ms));
 
   // Render messages with typing animation for code blocks
   async function renderMessages() {
@@ -465,11 +565,9 @@
       if (msg.role === 'assistant' && msg.text.startsWith('```') && msg.text.endsWith('```')) {
         // Extract code inside triple backticks
         const codeContent = msg.text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
-        // Determine language (optional)
         const langMatch = msg.text.match(/^```(\w+)/);
         const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
 
-        // Create code box elements
         const pre = document.createElement('pre');
         pre.className = 'code-box';
         const code = document.createElement('code');
@@ -477,19 +575,16 @@
         pre.appendChild(code);
         chatDiv.appendChild(pre);
 
-        // Typing animation for code
         code.textContent = '';
         for (let i = 0; i < codeContent.length; i++) {
           code.textContent += codeContent.charAt(i);
           pre.scrollTop = pre.scrollHeight;
           chatDiv.scrollTop = chatDiv.scrollHeight;
-          await delay(15); // typing speed (ms)
+          await delay(15);
         }
-        // Highlight code after typing
         Prism.highlightElement(code);
 
       } else {
-        // Normal message bubble
         const bubble = document.createElement('div');
         bubble.className = 'bubble ' + msg.role;
         bubble.textContent = msg.text;
@@ -509,7 +604,7 @@
     saveChats();
   }
 
-  // Create new chat
+  // Create a new chat
   function createNewChat(name) {
     if (!name.trim()) {
       alert('Enter a chat name');
@@ -554,7 +649,6 @@
     statusDiv.textContent = 'Thinking...';
     await renderMessages();
 
-    // Save model selection
     if (currentChatId) {
       chats[currentChatId].model = model;
       saveChats();
@@ -572,10 +666,9 @@
       }
 
       let assistantReply = '';
-      addMessage('assistant', ''); // placeholder bubble
+      addMessage('assistant', ''); // placeholder for streaming response
       await renderMessages();
 
-      // Get the last message (the empty assistant message)
       const chat = chats[currentChatId];
       const lastMsgIndex = chat.messages.length - 1;
 
@@ -588,8 +681,7 @@
         }
       }
 
-      statusDiv.textContent = 'Done.';
-
+      statusDiv.textContent = '';
       if (assistantVoiceEnabled) speakText(assistantReply);
 
     } catch (e) {
@@ -675,7 +767,7 @@
   function toggleVoiceInput() {
     if (!recognition) return;
     if (isListening) {
-      recognition.stop(); // user clicked to stop listening
+      recognition.stop();
     } else {
       showMicPermissionPrompt();
     }
@@ -691,7 +783,7 @@
   // Load assistant voice preference
   function loadAssistantVoicePref() {
     const val = localStorage.getItem('assistantVoiceEnabled');
-    assistantVoiceEnabled = val !== 'false'; // default true
+    assistantVoiceEnabled = val !== 'false';
     voiceToggle.textContent = assistantVoiceEnabled ? '🔊' : '🔈';
   }
 
@@ -754,9 +846,11 @@
   });
   sendBtn.addEventListener('click', sendQuery);
   generateImageBtn.addEventListener('click', generateImage);
+  voiceInputBtn.addEvent
   voiceInputBtn.addEventListener('click', toggleVoiceInput);
   darkModeToggle.addEventListener('click', toggleDarkMode);
   voiceToggle.addEventListener('click', toggleAssistantVoice);
+
   promptInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -780,7 +874,7 @@
     statusDiv.textContent = 'Microphone permission denied.';
   });
 
-  // Run
+  // Run initialization
   init();
 </script>
 
