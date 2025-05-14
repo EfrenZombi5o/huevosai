@@ -122,29 +122,34 @@ async function renderMessages() {
   const chat = chats[currentChatId];
 
   for (const msg of chat.messages) {
-    if (msg.role === 'assistant' && msg.text.startsWith('```') && msg.text.endsWith('```')) {
-      // Extract code inside triple backticks
-      const codeContent = msg.text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
-      const langMatch = msg.text.match(/^```(\w+)/);
-      const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
-
-      const pre = document.createElement('pre');
-      pre.className = 'code-box';
-      const code = document.createElement('code');
-      code.className = langClass;
-      pre.appendChild(code);
-      chatDiv.appendChild(pre);
-
-      code.textContent = codeContent;
-    } else {
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble ' + msg.role;
-      bubble.textContent = msg.text;
-      chatDiv.appendChild(bubble);
-    }
+    const el = createMessageElement(msg);
+    chatDiv.appendChild(el);
   }
   Prism.highlightAll();
   chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+// Create message element: bubble for text, code-box for code
+function createMessageElement(msg) {
+  if (msg.role === 'assistant' && msg.text.startsWith('```') && msg.text.endsWith('```')) {
+    // Extract code content and language
+    const codeContent = msg.text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
+    const langMatch = msg.text.match(/^```(\w+)/);
+    const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
+
+    const pre = document.createElement('pre');
+    pre.className = 'code-box';
+    const code = document.createElement('code');
+    code.className = langClass;
+    pre.appendChild(code);
+    code.textContent = codeContent;
+    return pre;
+  } else {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + msg.role;
+    bubble.textContent = msg.text;
+    return bubble;
+  }
 }
 
 // Add message to current chat
@@ -185,28 +190,6 @@ function buildContextPrompt(newUserMessage) {
   return context;
 }
 
-// Helper: create a bubble element for a message (used for streaming updates)
-function createBubble(msg) {
-  if (msg.role === 'assistant' && msg.text.startsWith('```') && msg.text.endsWith('```')) {
-    const codeContent = msg.text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
-    const langMatch = msg.text.match(/^```(\w+)/);
-    const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
-
-    const pre = document.createElement('pre');
-    pre.className = 'code-box';
-    const code = document.createElement('code');
-    code.className = langClass;
-    pre.appendChild(code);
-    code.textContent = codeContent;
-    Prism.highlightElement(code);
-    return pre;
-  } else {
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble ' + msg.role;
-    bubble.textContent = msg.text;
-    return bubble;
-  }
-}
 // Send user query and stream assistant response with incremental update
 async function sendQuery() {
   const prompt = promptInput.value.trim();
@@ -246,20 +229,20 @@ async function sendQuery() {
     chatDiv.innerHTML = '';
     const chat = chats[currentChatId];
     for (let i = 0; i < chat.messages.length - 1; i++) {
-      const bubble = createBubble(chat.messages[i]);
-      chatDiv.appendChild(bubble);
+      const el = createMessageElement(chat.messages[i]);
+      chatDiv.appendChild(el);
     }
-    // Create last message bubble for streaming update
+    // Create last message element for streaming update
     let lastMsg = chat.messages[chat.messages.length - 1];
-    let lastBubble = createBubble(lastMsg);
-    chatDiv.appendChild(lastBubble);
+    let lastEl = createMessageElement(lastMsg);
+    chatDiv.appendChild(lastEl);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // For code blocks, we need special handling
+    // For code blocks, special handling
     const isCode = lastMsg.text.startsWith('```') && lastMsg.text.endsWith('```');
     let codeElement = null;
     if (isCode) {
-      codeElement = lastBubble.querySelector('code');
+      codeElement = lastEl.querySelector('code');
       codeElement.textContent = '';
     }
 
@@ -279,7 +262,7 @@ async function sendQuery() {
             Prism.highlightElement(codeElement);
           }, 100);
         } else {
-          lastBubble.textContent = assistantReply;
+          lastEl.textContent = assistantReply;
         }
         chatDiv.scrollTop = chatDiv.scrollHeight;
       }
@@ -398,7 +381,7 @@ function speakText(text) {
   if (synth.speaking) synth.cancel();
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+  utterance.lang = 'en-US';
   synth.speak(utterance);
 }
 
@@ -422,7 +405,6 @@ function loadDarkMode() {
   if (localStorage.getItem('darkMode') === 'true') {
     document.body.classList.add('dark');
     sidebar.classList.add('dark');
-    newChatNameInput.classList.add('dark');
     newChatForm.classList.add('dark');
     chatListEl.querySelectorAll('li').forEach(li => li.classList.add('dark'));
     darkModeToggle.textContent = '☀️';
