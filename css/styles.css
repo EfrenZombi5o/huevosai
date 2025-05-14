@@ -403,3 +403,38 @@ body:not(.dark) .code-box {
     max-width: 100%;
   }
 }
+
+/* --- Copy Code Button Styles --- */
+.assistant-message-container > div {
+  position: relative; /* Ensure relative positioning for absolute button */
+}
+
+.assistant-message-container button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+  user-select: none;
+  z-index: 10;
+}
+
+.assistant-message-container button:hover {
+  background-color: var(--primary-dark);
+}
+
+body.dark .assistant-message-container button {
+  background-color: var(--primary);
+  color: white;
+}
+
+body.dark .assistant-message-container button:hover {
+  background-color: var(--primary-dark);
+}
