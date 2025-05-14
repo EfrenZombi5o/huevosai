@@ -117,7 +117,6 @@ function switchChat(id) {
 async function loadChatToUI() {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
-  // Note: Do not clear promptInput or imageUrlInput here to preserve user input on chat switch
   modelSelect.value = chat.model || 'deepseek-chat';
   statusDiv.textContent = '';
   await renderMessages();
@@ -169,14 +168,7 @@ async function createMessageElement(msg) {
     } else if (part.type === 'code') {
       // Wrapper div for code block + copy button
       const wrapper = document.createElement('div');
-      wrapper.style.position = 'relative'; // inline style
-
-      // copyBtn with inline styles and event listener
-
-      wrapper.appendChild(copyBtn);
-      wrapper.appendChild(pre);
-      container.appendChild(wrapper);
-
+      wrapper.style.position = 'relative';
 
       // Copy button
       const copyBtn = document.createElement('button');
@@ -220,12 +212,8 @@ async function createMessageElement(msg) {
       wrapper.appendChild(copyBtn);
       wrapper.appendChild(pre);
 
-      if (window.hljs) {
+      if (window.hljs && hljs.highlightElement) {
         hljs.highlightElement(code);
-      } else {
-        setTimeout(() => {
-          if (window.hljs) hljs.highlightElement(code);
-        }, 100);
       }
 
       container.appendChild(wrapper);
@@ -288,7 +276,7 @@ function buildContextPrompt(newUserMessage) {
 
 // Debounced highlight function for streaming code updates
 const debouncedHighlight = debounce(codeEl => {
-  if (window.hljs) {
+  if (window.hljs && hljs.highlightElement) {
     hljs.highlightElement(codeEl);
   }
 }, 150);
@@ -433,7 +421,6 @@ function showMicPermissionPrompt() {
   micPermissionPrompt.style.display = 'flex';
 }
 
-// Hide mic permission prompt
 function hideMicPermissionPrompt() {
   micPermissionPrompt.style.display = 'none';
 }
@@ -546,3 +533,4 @@ window.addEventListener('DOMContentLoaded', () => {
     statusDiv.textContent = 'Microphone permission denied.';
   });
 });
+
