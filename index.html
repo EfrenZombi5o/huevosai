@@ -10,7 +10,7 @@
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet" />
 
 <style>
-  /* --- Your existing styles --- */
+  /* --- Styles --- */
   :root {
     --bg-light: #f9f9f9;
     --bg-dark: #121212;
@@ -331,6 +331,7 @@
 </style>
 </head>
 <body>
+
 <div id="sidebar">
   <div id="chatListHeader">Chats</div>
   <ul id="chatList"></ul>
@@ -382,57 +383,7 @@
     <button id="denyMicBtn">Cancel</button>
   </div>
 </div>
-<div id="sidebar">
-  <div id="chatListHeader">Chats</div>
-  <ul id="chatList"></ul>
-  <form id="newChatForm">
-    <input type="text" id="newChatName" placeholder="New chat name" autocomplete="off" />
-    <button type="submit" id="createChatBtn">Create Chat</button>
-  </form>
-</div>
 
-<div id="main">
-  <div id="chat"></div>
-  <div id="status"></div>
-  <div id="input-area">
-    <textarea id="prompt" rows="2" placeholder="Type your message..."></textarea>
-    <button id="voiceInputBtn" title="Voice Input">🎤</button>
-    <button id="sendBtn" title="Send Message">➡️</button>
-  </div>
-  <div id="controls">
-    <input type="text" id="imageUrl" placeholder="Optional image URL to analyze" />
-    <select id="modelSelect" title="Select AI Model">
-      <optgroup label="DeepSeek Models">
-        <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
-        <option value="deepseek-reasoner">DeepSeek Reasoner (DeepSeek R1)</option>
-      </optgroup>
-      <optgroup label="Gemini Models">
-        <option value="google/gemini-2.5-pro-exp-03-25:free">Gemini 2.5 Pro</option>
-        <option value="google/gemini-2.0-flash-lite-001">Gemini 2.0 Flash Lite</option>
-        <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash</option>
-      </optgroup>
-      <optgroup label="OpenAI-Compatible Models">
-        <option value="gpt-4o">GPT-4o</option>
-        <option value="gpt-4.1">GPT-4.1</option>
-        <option value="o3-mini">o3-mini</option>
-        <option value="o1-mini">o1-mini</option>
-        <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
-      </optgroup>
-    </select>
-    <button id="generateImageBtn" title="Generate Image">🖼️</button>
-    <button id="voiceToggle" title="Toggle Assistant Voice">🔊</button>
-    <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
-  </div>
-</div>
-
-<!-- Mic permission prompt -->
-<div id="micPermissionPrompt">
-  <div>
-    <p>This app needs access to your microphone to enable voice input.</p>
-    <button id="allowMicBtn">Allow Microphone</button>
-    <button id="denyMicBtn">Cancel</button>
-  </div>
-</div>
 <!-- Prism JS -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
@@ -441,7 +392,7 @@
   // Elements
   const chatListEl = document.getElementById('chatList');
   const newChatForm = document.getElementById('newChatForm');
-    const newChatNameInput = document.getElementById('newChatName');
+  const newChatNameInput = document.getElementById('newChatName');
   const chatDiv = document.getElementById('chat');
   const promptInput = document.getElementById('prompt');
   const sendBtn = document.getElementById('sendBtn');
@@ -545,14 +496,14 @@
   }
 
   // Load chat messages and model into UI
-  function loadChatToUI() {
+  async function loadChatToUI() {
     if (!currentChatId) return;
     const chat = chats[currentChatId];
     promptInput.value = '';
     imageUrlInput.value = '';
     modelSelect.value = chat.model || 'deepseek-chat';
     statusDiv.textContent = '';
-    renderMessages();
+    await renderMessages();
   }
 
   // Render messages with typing animation for code blocks
@@ -845,8 +796,7 @@
     createNewChat(newChatNameInput.value);
   });
   sendBtn.addEventListener('click', sendQuery);
-  generateImageBtn.addEventListener('click', generateImage);
-  voiceInputBtn.addEvent
+    generateImageBtn.addEventListener('click', generateImage);
   voiceInputBtn.addEventListener('click', toggleVoiceInput);
   darkModeToggle.addEventListener('click', toggleDarkMode);
   voiceToggle.addEventListener('click', toggleAssistantVoice);
@@ -880,4 +830,3 @@
 
 </body>
 </html>
-
