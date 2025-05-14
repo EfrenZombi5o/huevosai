@@ -47,12 +47,17 @@
       <button id="sendBtn" title="Send Message">➡️</button>
     </div>
     <div id="controls">
+      <!-- Removed old image URL input -->
+      <!-- Added image file upload input -->
       <input
-        type="text"
-        id="imageUrl"
-        placeholder="Optional image URL to analyze"
-        autocomplete="off"
+        type="file"
+        id="imageUpload"
+        accept="image/*"
+        title="Upload Image"
       />
+      <!-- Optional preview container -->
+      <div id="imagePreview"></div>
+
       <select id="modelSelect" title="Select AI Model">
         <optgroup label="DeepSeek Models">
           <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
