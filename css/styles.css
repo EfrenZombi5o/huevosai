@@ -364,11 +364,6 @@ body.dark select option {
   align-self: flex-start;
 }
 
-/* Add highlight.js class for better compatibility */
-.code-box.hljs {
-  /* You can add any overrides here if needed */
-}
-
 /* Optional: Light mode variant for code box */
 body:not(.dark) .code-box {
   background: #f5f5f5;
