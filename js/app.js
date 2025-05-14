@@ -30,6 +30,15 @@ let assistantVoiceEnabled = true;
 // Utility delay function
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
+// Debounce helper
+function debounce(fn, delay) {
+  let timer = null;
+  return (...args) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 // Load chats from localStorage
 function loadChats() {
   const saved = localStorage.getItem('personal_ai_chats');
@@ -60,7 +69,7 @@ function renderChatList() {
     li.textContent = chat.name;
     li.dataset.chatId = id;
     li.classList.toggle('active', id === currentChatId);
-    if(document.body.classList.contains('dark')) li.classList.add('dark');
+    if (document.body.classList.contains('dark')) li.classList.add('dark');
 
     // Click to switch chat (ignore clicks on delete button)
     li.addEventListener('click', e => {
@@ -108,43 +117,28 @@ function switchChat(id) {
 async function loadChatToUI() {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
-  promptInput.value = '';
-  imageUrlInput.value = '';
+  // Note: Do not clear promptInput or imageUrlInput here to preserve user input on chat switch
   modelSelect.value = chat.model || 'deepseek-chat';
   statusDiv.textContent = '';
   await renderMessages();
 }
 
-// Render all messages except streaming updates
-async function renderMessages() {
-  if (!currentChatId) return;
-  chatDiv.innerHTML = '';
-  const chat = chats[currentChatId];
-
-  for (const msg of chat.messages) {
-    const el = createMessageElement(msg);
-    chatDiv.appendChild(el);
-  }
-  Prism.highlightAll();
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-// Create message element: bubble for text, code-box for code
-function createMessageElement(msg) {
+// Create message element: bubble for text, code-box for code (uses highlight.js auto-detect)
+async function createMessageElement(msg) {
   const text = msg.text.trim();
   if (msg.role === 'assistant' && text.startsWith('```') && text.endsWith('```')) {
-    // Extract code content and language
-    const langMatch = text.match(/^```(\w+)/);
-    const langClass = langMatch ? `language-${langMatch[1]}` : 'language-javascript';
+    // Extract code content without language tag
     const codeContent = text.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
 
     const pre = document.createElement('pre');
-    pre.className = 'code-box';
+    pre.className = 'code-box hljs'; // add hljs class for highlight.js styles
     const code = document.createElement('code');
-    code.className = langClass;
     code.textContent = codeContent;
     pre.appendChild(code);
-    Prism.highlightElement(code);
+
+    // Use highlight.js auto-detection
+    hljs.highlightElement(code);
+
     return pre;
   } else {
     const bubble = document.createElement('div');
@@ -154,11 +148,24 @@ function createMessageElement(msg) {
   }
 }
 
+// Render all messages (async due to async createMessageElement)
+async function renderMessages() {
+  if (!currentChatId) return;
+  chatDiv.innerHTML = '';
+  const chat = chats[currentChatId];
+
+  for (const msg of chat.messages) {
+    const el = await createMessageElement(msg);
+    chatDiv.appendChild(el);
+  }
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
 // Add message to current chat
 function addMessage(role, text) {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
-  chat.messages.push({role, text});
+  chat.messages.push({ role, text });
   if (chat.messages.length > 50) chat.messages.shift();
   saveChats();
 }
@@ -192,6 +199,11 @@ function buildContextPrompt(newUserMessage) {
   return context;
 }
 
+// Debounced highlight function for streaming code updates
+const debouncedHighlight = debounce(codeEl => {
+  hljs.highlightElement(codeEl);
+}, 150);
+
 // Send user query and stream assistant response with incremental update
 async function sendQuery() {
   const prompt = promptInput.value.trim();
@@ -205,6 +217,7 @@ async function sendQuery() {
 
   addMessage('user', prompt || '[Image URL provided]');
   promptInput.value = '';
+  imageUrlInput.value = '';
   statusDiv.textContent = 'Thinking...';
   await renderMessages();
 
@@ -225,22 +238,28 @@ async function sendQuery() {
     }
 
     let assistantReply = '';
-    // Add placeholder assistant message
+
+    // Add empty assistant message placeholder
     addMessage('assistant', '');
-    // Render all except last message
-    chatDiv.innerHTML = '';
+    await renderMessages();
+
+    // Get last message and element for streaming update
     const chat = chats[currentChatId];
+    let lastMsg = chat.messages[chat.messages.length - 1];
+
+    // Clear chatDiv and render all except last message
+    chatDiv.innerHTML = '';
     for (let i = 0; i < chat.messages.length - 1; i++) {
-      const el = createMessageElement(chat.messages[i]);
+      const el = await createMessageElement(chat.messages[i]);
       chatDiv.appendChild(el);
     }
+
     // Create last message element for streaming update
-    let lastMsg = chat.messages[chat.messages.length - 1];
-    let lastEl = createMessageElement(lastMsg);
+    let lastEl = await createMessageElement(lastMsg);
     chatDiv.appendChild(lastEl);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // For code blocks, special handling
+    // Detect if last message is code block
     const isCode = lastMsg.text.trim().startsWith('```') && lastMsg.text.trim().endsWith('```');
     let codeElement = null;
     if (isCode) {
@@ -248,7 +267,6 @@ async function sendQuery() {
       codeElement.textContent = '';
     }
 
-    let highlightTimeout;
     for await (const part of responseStream) {
       if (part?.text) {
         assistantReply += part.text;
@@ -256,13 +274,10 @@ async function sendQuery() {
         saveChats();
 
         if (isCode) {
-          // Update code content inside triple backticks
+          // Strip triple backticks for display
           let codeContent = assistantReply.replace(/^```(\w+)?\n?/, '').replace(/```$/, '');
           codeElement.textContent = codeContent;
-          clearTimeout(highlightTimeout);
-          highlightTimeout = setTimeout(() => {
-            Prism.highlightElement(codeElement);
-          }, 100);
+          debouncedHighlight(codeElement);
         } else {
           lastEl.textContent = assistantReply;
         }
@@ -291,12 +306,18 @@ async function generateImage() {
     addMessage('user', prompt);
     addMessage('assistant', '[Image generated below]');
     await renderMessages();
-    // Append image inside chat container
+
+    // Wrap image in assistant bubble for consistent UI
+    const imgBubble = document.createElement('div');
+    imgBubble.className = 'bubble assistant';
     const imgElem = document.createElement('img');
     imgElem.src = img.src;
     imgElem.style.maxWidth = '100%';
-    chatDiv.appendChild(imgElem);
+    imgElem.alt = 'Generated image';
+    imgBubble.appendChild(imgElem);
+    chatDiv.appendChild(imgBubble);
     chatDiv.scrollTop = chatDiv.scrollHeight;
+
     statusDiv.textContent = 'Image generated.';
     promptInput.value = '';
   } catch (e) {
@@ -391,14 +412,14 @@ function speakText(text) {
 function toggleDarkMode() {
   document.body.classList.toggle('dark');
   sidebar.classList.toggle('dark');
-  newChatForm.classList.toggle('dark');
+    newChatForm.classList.toggle('dark');
   chatListEl.querySelectorAll('li').forEach(li => li.classList.toggle('dark'));
   if (document.body.classList.contains('dark')) {
     darkModeToggle.textContent = '☀️';
     localStorage.setItem('darkMode', 'true');
   } else {
     darkModeToggle.textContent = '🌙';
-    localStorage.setItem('darkMode',     'false');
+    localStorage.setItem('darkMode', 'false');
   }
 }
 
