@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Assistant with Voice & Code Typing + Chat Delete</title>
+
+  <!-- Google Fonts: Fira Code for code blocks -->
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
-  <!-- External scripts and styles -->
-  <script src="https://js.puter.com/v2/" defer></script>
 
   <!-- Highlight.js CSS for syntax highlighting -->
   <link
@@ -27,6 +27,7 @@
         id="newChatName"
         placeholder="New chat name"
         autocomplete="off"
+        required
       />
       <button type="submit" id="createChatBtn">Create Chat</button>
     </form>
@@ -40,6 +41,7 @@
         id="prompt"
         rows="2"
         placeholder="Type your message..."
+        autocomplete="off"
       ></textarea>
       <button id="voiceInputBtn" title="Voice Input">🎤</button>
       <button id="sendBtn" title="Send Message">➡️</button>
@@ -49,6 +51,7 @@
         type="text"
         id="imageUrl"
         placeholder="Optional image URL to analyze"
+        autocomplete="off"
       />
       <select id="modelSelect" title="Select AI Model">
         <optgroup label="DeepSeek Models">
@@ -82,6 +85,9 @@
       <button id="denyMicBtn">Cancel</button>
     </div>
   </div>
+
+  <!-- External AI SDK -->
+  <script src="https://js.puter.com/v2/" defer></script>
 
   <!-- Highlight.js JS -->
   <script
