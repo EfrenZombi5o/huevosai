@@ -343,7 +343,11 @@ const debouncedHighlight = debounce((codeEl) => {
 // ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
 async function sendQuery() {
-  if (isSending) return;
+  console.log("sendQuery called");
+  if (isSending) {
+    console.log("sendQuery ignored because isSending is true");
+    return;
+  }
   isSending = true;
 
   const prompt = promptInput.value.trim();
@@ -453,11 +457,11 @@ function toggleDarkMode() {
   } else {
     darkModeToggle.textContent = "🌙";
     localStorage.setItem("darkMode", "false");
-  }
+      }
 }
 
 function loadDarkMode() {
-   if (localStorage.getItem("darkMode") === "true") {
+  if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark");
     sidebar.classList.add("dark");
     newChatForm.classList.add("dark");
@@ -629,6 +633,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   if (!sendBtn.dataset.listenerAttached) {
     sendBtn.addEventListener("click", () => {
+      console.log("Send button clicked");
       sendQuery();
     });
     sendBtn.dataset.listenerAttached = "true";
@@ -648,6 +653,7 @@ window.addEventListener("DOMContentLoaded", () => {
     promptInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
+        console.log("Enter pressed in prompt input");
         sendQuery();
       }
     });
