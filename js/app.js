@@ -299,7 +299,7 @@ async function renderMessages() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-// <-- Added console log here to track message additions -->
+// Add console log to track message additions
 async function addMessage(role, text) {
   if (!currentChatId) return;
   console.log(`addMessage called: role=${role}, text=${text.slice(0, 30)}`);
@@ -325,13 +325,27 @@ async function createNewChat(name) {
   newChatNameInput.value = "";
 }
 
+// Updated buildContextPrompt with filtering consecutive duplicate user messages and limiting context size
 function buildContextPrompt(newUserMessage) {
   if (!currentChatId) return newUserMessage;
   const chat = chats[currentChatId];
   let context = "";
-  chat.messages.forEach((msg) => {
+
+  let lastUserMessage = null;
+  // Take last 20 messages for context
+  const recentMessages = chat.messages.slice(-20);
+
+  for (const msg of recentMessages) {
+    if (msg.role === "user") {
+      if (msg.text === lastUserMessage) {
+        // Skip consecutive duplicate user message
+        continue;
+      }
+      lastUserMessage = msg.text;
+    }
     context += `${msg.role === "user" ? "User" : "Assistant"}: ${msg.text}\n`;
-  });
+  }
+
   context += `User: ${newUserMessage}\nAssistant:`;
   return context;
 }
