@@ -26,8 +26,6 @@ const statusDiv = document.getElementById("status");
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
 
-// Removed mic permission prompt elements and voice input button
-
 // Login modal elements
 const loginModal = document.getElementById("loginModal");
 const emailInput = document.getElementById("emailInput");
@@ -141,6 +139,12 @@ function renderChatList() {
     li.addEventListener("click", (e) => {
       if (e.target.classList.contains("delete-btn")) return;
       switchChat(id);
+
+      // Auto-close sidebar on mobile after chat selection
+      if (window.innerWidth <= 768) {
+        sidebar.classList.add("collapsed");
+        document.body.style.overflow = "";
+      }
     });
 
     const delBtn = document.createElement("span");
@@ -383,14 +387,12 @@ async function sendQuery() {
       }
 
       statusDiv.textContent = "";
-      // Removed speech synthesis
     } else {
       // Non-streaming response fallback
       const assistantReply = response.message?.content || response;
       await addMessage("assistant", assistantReply);
       await renderMessages();
       statusDiv.textContent = "";
-      // Removed speech synthesis
     }
   } catch (e) {
     console.error("Error in sendQuery:", e);
@@ -441,8 +443,8 @@ function toggleDarkMode() {
     darkModeToggle.textContent = "☀️";
     localStorage.setItem("darkMode", "true");
   } else {
-    darkModeToggle.textContent = "🌙";
-   
+
+        darkModeToggle.textContent = "🌙";
     localStorage.setItem("darkMode", "false");
   }
 }
@@ -463,12 +465,20 @@ function loadDarkMode() {
 
 sidebarToggle.addEventListener("click", () => {
   sidebar.classList.toggle("collapsed");
+  if (!sidebar.classList.contains("collapsed")) {
+    // Sidebar opened - lock body scroll
+    document.body.style.overflow = "hidden";
+  } else {
+    // Sidebar closed - unlock body scroll
+    document.body.style.overflow = "";
+  }
 });
 
 document.addEventListener("click", (e) => {
   if (window.innerWidth <= 768) {
     if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
       sidebar.classList.add("collapsed");
+      document.body.style.overflow = "";
     }
   }
 });
@@ -476,8 +486,10 @@ document.addEventListener("click", (e) => {
 function checkWidth() {
   if (window.innerWidth <= 768) {
     sidebar.classList.add("collapsed");
+    document.body.style.overflow = "";
   } else {
     sidebar.classList.remove("collapsed");
+    document.body.style.overflow = "";
   }
 }
 window.addEventListener("resize", checkWidth);
