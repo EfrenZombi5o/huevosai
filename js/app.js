@@ -19,19 +19,14 @@ const newChatNameInput = document.getElementById("newChatName");
 const chatDiv = document.getElementById("chat");
 const promptInput = document.getElementById("prompt");
 const sendBtn = document.getElementById("sendBtn");
-const voiceInputBtn = document.getElementById("voiceInputBtn");
 const modelSelect = document.getElementById("modelSelect");
 const generateImageBtn = document.getElementById("generateImageBtn");
 const darkModeToggle = document.getElementById("darkModeToggle");
-const voiceToggle = document.getElementById("voiceToggle");
 const statusDiv = document.getElementById("status");
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
 
-// Mic permission prompt elements
-const micPermissionPrompt = document.getElementById("micPermissionPrompt");
-const allowMicBtn = document.getElementById("allowMicBtn");
-const denyMicBtn = document.getElementById("denyMicBtn");
+// Removed mic permission prompt elements and voice input button
 
 // Login modal elements
 const loginModal = document.getElementById("loginModal");
@@ -53,10 +48,6 @@ sidebar.insertBefore(authBtn, sidebar.firstChild);
 // State variables
 let chats = {};
 let currentChatId = null;
-let recognition = null;
-let isListening = false;
-let synth = window.speechSynthesis;
-let assistantVoiceEnabled = true;
 
 // Utility delay function
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -392,14 +383,14 @@ async function sendQuery() {
       }
 
       statusDiv.textContent = "";
-      if (assistantVoiceEnabled) speakText(assistantReply);
+      // Removed speech synthesis
     } else {
       // Non-streaming response fallback
       const assistantReply = response.message?.content || response;
       await addMessage("assistant", assistantReply);
       await renderMessages();
       statusDiv.textContent = "";
-      if (assistantVoiceEnabled) speakText(assistantReply);
+      // Removed speech synthesis
     }
   } catch (e) {
     console.error("Error in sendQuery:", e);
@@ -439,85 +430,6 @@ async function generateImage() {
   }
 }
 
-// ------------------- VOICE RECOGNITION -------------------
-
-function setupVoiceRecognition() {
-  if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-    voiceInputBtn.disabled = true;
-    voiceInputBtn.title = "Voice input not supported in this browser";
-    statusDiv.textContent = "Voice input not supported in this browser return";
-  }
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    isListening = true;
-    voiceInputBtn.textContent = "🎙️ Listening... (click to stop)";
-    statusDiv.textContent = "Listening...";
-  };
-  recognition.onend = () => {
-    isListening = false;
-    voiceInputBtn.textContent = "🎤";
-    statusDiv.textContent = "";
-  };
-  recognition.onerror = (e) => {
-    console.error("Voice input error:", e.error);
-    statusDiv.textContent = "Voice input error: " + e.error;
-    isListening = false;
-    voiceInputBtn.textContent = "🎤";
-    if (e.error === "not-allowed" || e.error === "permission-denied") {
-      alert("Microphone access denied. Please allow microphone permissions and reload the page.");
-    }
-  };
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    promptInput.value = transcript;
-    statusDiv.textContent = "You said: " + transcript;
-  };
-}
-
-function showMicPermissionPrompt() {
-  micPermissionPrompt.classList.remove("hidden");
-  micPermissionPrompt.focus();
-}
-
-function hideMicPermissionPrompt() {
-  micPermissionPrompt.classList.add("hidden");
-}
-
-function toggleVoiceInput() {
-  if (!recognition) return;
-  if (isListening) {
-    recognition.stop();
-  } else {
-    showMicPermissionPrompt();
-  }
-}
-
-function toggleAssistantVoice() {
-  assistantVoiceEnabled = !assistantVoiceEnabled;
-  voiceToggle.textContent = assistantVoiceEnabled ? "🔊" : "🔈";
-  localStorage.setItem("assistantVoiceEnabled", assistantVoiceEnabled ? "true" : "false");
-}
-
-function loadAssistantVoicePref() {
-  const val = localStorage.getItem("assistantVoiceEnabled");
-  assistantVoiceEnabled = val !== "false";
-  voiceToggle.textContent = assistantVoiceEnabled ? "🔊" : "🔈";
-}
-
-function speakText(text) {
-  if (!synth) return;
-  if (synth.speaking) synth.cancel();
-  if (!text) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  synth.speak(utterance);
-}
-
 // ------------------- DARK MODE TOGGLE -------------------
 
 function toggleDarkMode() {
@@ -529,7 +441,7 @@ function toggleDarkMode() {
     darkModeToggle.textContent = "☀️";
     localStorage.setItem("darkMode", "true");
   } else {
-    darkModeToggle.textContent = "🌙";
+       darkModeToggle.textContent = "🌙";
     localStorage.setItem("darkMode", "false");
   }
 }
@@ -680,9 +592,7 @@ onAuthStateChanged(auth, async (user) => {
 // ------------------- INITIALIZATION -------------------
 
 window.addEventListener("DOMContentLoaded", () => {
-  setupVoiceRecognition();
   loadDarkMode();
-  loadAssistantVoicePref();
 
   newChatForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -690,29 +600,13 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   sendBtn.addEventListener("click", sendQuery);
   generateImageBtn.addEventListener("click", generateImage);
-  voiceInputBtn.addEventListener("click", toggleVoiceInput);
   darkModeToggle.addEventListener("click", toggleDarkMode);
-  voiceToggle.addEventListener("click", toggleAssistantVoice);
 
   promptInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendQuery();
     }
-  });
-
-  allowMicBtn.addEventListener("click", () => {
-    hideMicPermissionPrompt();
-    try {
-      recognition.start();
-    } catch (err) {
-      statusDiv.textContent = "Error starting voice recognition: " + err.message;
-    }
-  });
-
-  denyMicBtn.addEventListener("click", () => {
-    hideMicPermissionPrompt();
-    statusDiv.textContent = "Microphone permission denied.";
   });
 
   // Optionally show login modal on page load if no user
