@@ -49,6 +49,9 @@ authBtn.style.padding = "6px 12px";
 authBtn.style.cursor = "pointer";
 sidebar.insertBefore(authBtn, sidebar.firstChild);
 
+// Initialize auth button immediately
+updateAuthButton(auth.currentUser);
+
 // State variables
 let chats = {};
 let currentChatId = null;
@@ -435,7 +438,7 @@ function setupVoiceRecognition() {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  recognition.onstart = () => {
+    recognition.onstart = () => {
     isListening = true;
     voiceInputBtn.textContent = "🎙️ Listening... (click to stop)";
     statusDiv.textContent = "Listening...";
@@ -530,11 +533,13 @@ function loadDarkMode() {
 // ------------------- LOGIN MODAL SHOW/HIDE -------------------
 
 function showLogin() {
-  loginModal.style.display = "flex";
+  loginModal.classList.remove("hidden");
+  loginModal.classList.add("active");
 }
 
 function hideLogin() {
-  loginModal.style.display = "none";
+  loginModal.classList.remove("active");
+  loginModal.classList.add("hidden");
 }
 
 // Close login modal when clicking outside the form
@@ -548,14 +553,17 @@ loginModal.addEventListener("click", (e) => {
 
 // Update auth button text and behavior based on user state
 function updateAuthButton(user) {
+  console.log("updateAuthButton called, user:", user);
   if (user) {
     authBtn.textContent = "Logout";
     authBtn.onclick = async () => {
+      console.log("Logout clicked");
       await signOut(auth);
     };
   } else {
     authBtn.textContent = "Login / Sign Up";
     authBtn.onclick = () => {
+      console.log("Login button clicked");
       showLogin();
     };
   }
@@ -679,3 +687,4 @@ window.addEventListener("DOMContentLoaded", () => {
     showLogin();
   });
 });
+
