@@ -1,4 +1,3 @@
-// Import Firebase modules
 import {
   auth,
   db,
@@ -39,6 +38,14 @@ const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn");
 const loginError = document.getElementById("loginError");
 
+// Auth button in sidebar
+const authBtn = document.createElement("button");
+authBtn.id = "authBtn";
+authBtn.style.margin = "10px";
+authBtn.style.padding = "6px 12px";
+authBtn.style.cursor = "pointer";
+sidebar.insertBefore(authBtn, sidebar.firstChild);
+
 // State variables
 let chats = {};
 let currentChatId = null;
@@ -61,19 +68,16 @@ function debounce(fn, delay) {
 
 // ------------------- FIRESTORE SYNC -------------------
 
-// Save chats to Firestore under current user
 async function saveChatsToFirestore() {
   if (!auth.currentUser) return;
   try {
     const docRef = doc(db, "users", auth.currentUser.uid);
     await setDoc(docRef, { chats });
-    // console.log("Chats saved to Firestore");
   } catch (error) {
     console.error("Error saving chats:", error);
   }
 }
 
-// Load chats from Firestore for current user
 async function loadChatsFromFirestore(userId) {
   try {
     const docRef = doc(db, "users", userId);
@@ -89,18 +93,38 @@ async function loadChatsFromFirestore(userId) {
   }
 }
 
+// ------------------- LOCAL STORAGE -------------------
+
+function saveChatsToLocalStorage() {
+  localStorage.setItem("personal_ai_chats", JSON.stringify(chats));
+}
+
+function loadChatsFromLocalStorage() {
+  const saved = localStorage.getItem("personal_ai_chats");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 // ------------------- CHAT STORAGE -------------------
 
-// Remove localStorage persistence functions (commented out)
-// function loadChats() { ... }
-// function saveChats() { ... }
+function saveChats() {
+  if (auth.currentUser) {
+    saveChatsToFirestore();
+  } else {
+    saveChatsToLocalStorage();
+  }
+}
 
-// Generate unique chat ID
 function generateId() {
   return "chat_" + Math.random().toString(36).slice(2, 10);
 }
 
-// Render chat list with delete buttons
 function renderChatList() {
   chatListEl.innerHTML = "";
   for (const [id, chat] of Object.entries(chats)) {
@@ -110,13 +134,11 @@ function renderChatList() {
     li.classList.toggle("active", id === currentChatId);
     if (document.body.classList.contains("dark")) li.classList.add("dark");
 
-    // Click to switch chat (ignore clicks on delete button)
     li.addEventListener("click", (e) => {
       if (e.target.classList.contains("delete-btn")) return;
       switchChat(id);
     });
 
-    // Delete button
     const delBtn = document.createElement("span");
     delBtn.textContent = "×";
     delBtn.className = "delete-btn";
@@ -129,7 +151,7 @@ function renderChatList() {
         )
       ) {
         delete chats[id];
-        saveChatsToFirestore();
+        saveChats();
         if (currentChatId === id) {
           const remainingIds = Object.keys(chats);
           if (remainingIds.length > 0) {
@@ -148,7 +170,6 @@ function renderChatList() {
   }
 }
 
-// Switch to a chat by ID
 function switchChat(id) {
   if (!chats[id]) return;
   currentChatId = id;
@@ -156,7 +177,6 @@ function switchChat(id) {
   loadChatToUI();
 }
 
-// Load chat messages and model into UI
 async function loadChatToUI() {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
@@ -165,7 +185,6 @@ async function loadChatToUI() {
   await renderMessages();
 }
 
-// Parse message text into parts: text and code blocks
 function parseMessageParts(text) {
   const regex = /```(\w+)?\n([\s\S]*?)```/g;
   let result = [];
@@ -187,7 +206,6 @@ function parseMessageParts(text) {
   return result;
 }
 
-// Create message element supporting mixed text and code parts with Copy Code button
 async function createMessageElement(msg) {
   if (msg.role === "user") {
     const bubble = document.createElement("div");
@@ -196,7 +214,6 @@ async function createMessageElement(msg) {
     return bubble;
   }
 
-  // Assistant message: parse parts
   const parts = parseMessageParts(msg.text);
 
   const container = document.createElement("div");
@@ -209,11 +226,9 @@ async function createMessageElement(msg) {
       p.textContent = part.content.trim();
       container.appendChild(p);
     } else if (part.type === "code") {
-      // Wrapper div for code block + copy button
       const wrapper = document.createElement("div");
       wrapper.style.position = "relative";
 
-      // Copy button
       const copyBtn = document.createElement("button");
       copyBtn.textContent = "Copy Code";
       copyBtn.style.position = "absolute";
@@ -224,11 +239,10 @@ async function createMessageElement(msg) {
       copyBtn.style.cursor = "pointer";
       copyBtn.style.borderRadius = "4px";
       copyBtn.style.border = "none";
-      copyBtn.style.backgroundColor = "var(--primary, #007bff)";
+      copyBtn.style.backgroundColor = "var(--primary)";
       copyBtn.style.color = "white";
       copyBtn.style.zIndex = "10";
 
-      // Code block
       const pre = document.createElement("pre");
       pre.className = "code-box hljs";
       const code = document.createElement("code");
@@ -236,7 +250,6 @@ async function createMessageElement(msg) {
       code.textContent = part.content;
       pre.appendChild(code);
 
-      // Copy button click handler
       copyBtn.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(code.textContent);
@@ -244,7 +257,7 @@ async function createMessageElement(msg) {
           setTimeout(() => {
             copyBtn.textContent = "Copy Code";
           }, 1500);
-        } catch (err) {
+        } catch {
           copyBtn.textContent = "Failed to copy";
           setTimeout(() => {
             copyBtn.textContent = "Copy Code";
@@ -266,7 +279,6 @@ async function createMessageElement(msg) {
   return container;
 }
 
-// Render all messages (async due to async createMessageElement)
 async function renderMessages() {
   if (!currentChatId) return;
   chatDiv.innerHTML = "";
@@ -279,16 +291,14 @@ async function renderMessages() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-// Add message to current chat and save to Firestore
 function addMessage(role, text) {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
   chat.messages.push({ role, text });
   if (chat.messages.length > 50) chat.messages.shift();
-  saveChatsToFirestore();
+  saveChats();
 }
 
-// Create a new chat
 function createNewChat(name) {
   if (!name.trim()) {
     alert("Enter a chat name");
@@ -300,12 +310,11 @@ function createNewChat(name) {
     messages: [],
     model: "deepseek-chat",
   };
-  saveChatsToFirestore();
+  saveChats();
   switchChat(id);
   newChatNameInput.value = "";
 }
 
-// Build context prompt from chat history + new user message
 function buildContextPrompt(newUserMessage) {
   if (!currentChatId) return newUserMessage;
   const chat = chats[currentChatId];
@@ -317,14 +326,13 @@ function buildContextPrompt(newUserMessage) {
   return context;
 }
 
-// Debounced highlight function for streaming code updates
 const debouncedHighlight = debounce((codeEl) => {
   if (window.hljs && hljs.highlightElement) {
     hljs.highlightElement(codeEl);
   }
 }, 150);
+// ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
-// Send user query and stream assistant response with incremental update
 async function sendQuery() {
   const prompt = promptInput.value.trim();
   const model = modelSelect.value;
@@ -341,16 +349,16 @@ async function sendQuery() {
 
   if (currentChatId) {
     chats[currentChatId].model = model;
-    saveChatsToFirestore();
+    saveChats();
   }
 
   try {
     const contextPrompt = buildContextPrompt(prompt);
+    // Replace puter.ai.chat with your actual streaming API call
     const responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
 
     let assistantReply = "";
 
-    // Add placeholder for assistant response
     addMessage("assistant", "");
     await renderMessages();
 
@@ -361,7 +369,7 @@ async function sendQuery() {
       if (part?.text) {
         assistantReply += part.text;
         lastMsg.text = assistantReply;
-        saveChatsToFirestore();
+        saveChats();
 
         await renderMessages();
 
@@ -377,7 +385,6 @@ async function sendQuery() {
   }
 }
 
-// Generate image from prompt
 async function generateImage() {
   const prompt = promptInput.value.trim();
   if (!prompt) {
@@ -386,12 +393,12 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
+    // Replace puter.ai.txt2img with your actual image generation API call
     const img = await puter.ai.txt2img(prompt);
     addMessage("user", prompt);
     addMessage("assistant", "[Image generated below]");
     await renderMessages();
 
-    // Wrap image in assistant bubble for consistent UI
     const imgBubble = document.createElement("div");
     imgBubble.className = "bubble assistant";
     const imgElem = document.createElement("img");
@@ -404,12 +411,13 @@ async function generateImage() {
 
     statusDiv.textContent = "Image generated.";
     promptInput.value = "";
-  } catch (e) {
+  } catch {
     statusDiv.textContent = "Error generating image.";
   }
 }
 
-// Setup voice recognition with toggle and permission prompt
+// ------------------- VOICE RECOGNITION -------------------
+
 function setupVoiceRecognition() {
   if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
     voiceInputBtn.disabled = true;
@@ -428,7 +436,7 @@ function setupVoiceRecognition() {
     voiceInputBtn.textContent = "🎙️ Listening... (click to stop)";
     statusDiv.textContent = "Listening...";
   };
-   recognition.onend = () => {
+  recognition.onend = () => {
     isListening = false;
     voiceInputBtn.textContent = "🎤";
     statusDiv.textContent = "";
@@ -449,7 +457,6 @@ function setupVoiceRecognition() {
   };
 }
 
-// Show/hide mic permission prompt
 function showMicPermissionPrompt() {
   micPermissionPrompt.style.display = "flex";
 }
@@ -458,7 +465,6 @@ function hideMicPermissionPrompt() {
   micPermissionPrompt.style.display = "none";
 }
 
-// Toggle voice input listening with permission prompt
 function toggleVoiceInput() {
   if (!recognition) return;
   if (isListening) {
@@ -468,21 +474,18 @@ function toggleVoiceInput() {
   }
 }
 
-// Toggle assistant voice on/off
 function toggleAssistantVoice() {
   assistantVoiceEnabled = !assistantVoiceEnabled;
   voiceToggle.textContent = assistantVoiceEnabled ? "🔊" : "🔈";
   localStorage.setItem("assistantVoiceEnabled", assistantVoiceEnabled ? "true" : "false");
 }
 
-// Load assistant voice preference
 function loadAssistantVoicePref() {
   const val = localStorage.getItem("assistantVoiceEnabled");
   assistantVoiceEnabled = val !== "false";
   voiceToggle.textContent = assistantVoiceEnabled ? "🔊" : "🔈";
 }
 
-// Text-to-speech for assistant voice
 function speakText(text) {
   if (!synth) return;
   if (synth.speaking) synth.cancel();
@@ -492,7 +495,8 @@ function speakText(text) {
   synth.speak(utterance);
 }
 
-// Dark mode toggle
+// ------------------- DARK MODE TOGGLE -------------------
+
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
   sidebar.classList.toggle("dark");
@@ -507,7 +511,6 @@ function toggleDarkMode() {
   }
 }
 
-// Load dark mode preference
 function loadDarkMode() {
   if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark");
@@ -520,16 +523,49 @@ function loadDarkMode() {
   }
 }
 
-// ------------------- AUTHENTICATION -------------------
+// ------------------- LOGIN MODAL SHOW/HIDE -------------------
 
-// Show login modal
 function showLogin() {
-  loginModal.style.display = "flex";
+  loginModal.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    loginModal.classList.add("active");
+  });
 }
 
-// Hide login modal
 function hideLogin() {
-  loginModal.style.display = "none";
+  loginModal.classList.remove("active");
+  loginModal.addEventListener(
+    "transitionend",
+    () => {
+      if (!loginModal.classList.contains("active")) {
+        loginModal.classList.add("hidden");
+      }
+    },
+    { once: true }
+  );
+}
+
+// Close login modal when clicking outside the form
+loginModal.addEventListener("click", (e) => {
+  if (e.target === loginModal) {
+    hideLogin();
+  }
+});
+// ------------------- AUTHENTICATION -------------------
+
+// Update auth button text and behavior based on user state
+function updateAuthButton(user) {
+  if (user) {
+    authBtn.textContent = "Logout";
+    authBtn.onclick = async () => {
+      await signOut(auth);
+    };
+  } else {
+    authBtn.textContent = "Login / Sign Up";
+    authBtn.onclick = () => {
+      showLogin();
+    };
+  }
 }
 
 // Login handler
@@ -543,6 +579,9 @@ loginBtn.addEventListener("click", async () => {
   }
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    hideLogin();
+    emailInput.value = "";
+    passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message;
   }
@@ -559,26 +598,33 @@ signupBtn.addEventListener("click", async () => {
   }
   try {
     await createUserWithEmailAndPassword(auth, email, password);
+    hideLogin();
+    emailInput.value = "";
+    passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message;
   }
 });
 
-// Listen for auth state changes
+// Listen for auth state changes and update UI accordingly
 onAuthStateChanged(auth, async (user) => {
+  updateAuthButton(user);
+
   if (user) {
     hideLogin();
     chats = await loadChatsFromFirestore(user.uid);
-    if (Object.keys(chats).length === 0) {
-      createNewChat("Default Chat");
-    } else {
-      switchChat(Object.keys(chats)[0]);
-    }
-    renderChatList();
-    renderMessages();
   } else {
-    showLogin();
+    // Load from localStorage if no user
+    chats = loadChatsFromLocalStorage();
   }
+
+  if (Object.keys(chats).length === 0) {
+    createNewChat("Default Chat");
+  } else {
+    switchChat(Object.keys(chats)[0]);
+  }
+  renderChatList();
+  renderMessages();
 });
 
 // ------------------- INITIALIZATION -------------------
@@ -588,7 +634,6 @@ window.addEventListener("DOMContentLoaded", () => {
   loadDarkMode();
   loadAssistantVoicePref();
 
-  // Event listeners
   newChatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     createNewChat(newChatNameInput.value);
@@ -619,5 +664,10 @@ window.addEventListener("DOMContentLoaded", () => {
   denyMicBtn.addEventListener("click", () => {
     hideMicPermissionPrompt();
     statusDiv.textContent = "Microphone permission denied.";
+  });
+
+  // Show modal on page load
+  window.addEventListener("load", () => {
+    showLogin();
   });
 });
