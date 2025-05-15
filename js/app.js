@@ -26,6 +26,7 @@ const darkModeToggle = document.getElementById("darkModeToggle");
 const voiceToggle = document.getElementById("voiceToggle");
 const statusDiv = document.getElementById("status");
 const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
 
 // Mic permission prompt elements
 const micPermissionPrompt = document.getElementById("micPermissionPrompt");
@@ -48,9 +49,6 @@ authBtn.style.margin = "10px";
 authBtn.style.padding = "6px 12px";
 authBtn.style.cursor = "pointer";
 sidebar.insertBefore(authBtn, sidebar.firstChild);
-
-// Initialize auth button immediately
-updateAuthButton(auth.currentUser);
 
 // State variables
 let chats = {};
@@ -81,7 +79,7 @@ async function saveChatsToFirestore() {
   }
   try {
     const docRef = doc(db, "users", auth.currentUser.uid);
-    await setDoc(docRef, { chats }, { merge: true }); // Use merge:true to avoid overwriting other data
+    await setDoc(docRef, { chats }, { merge: true });
     console.log("Chats saved to Firestore");
   } catch (error) {
     console.error("Error saving chats to Firestore:", error);
@@ -129,7 +127,6 @@ function loadChatsFromLocalStorage() {
 // ------------------- CHAT STORAGE -------------------
 
 async function saveChats() {
-  console.log("saveChats called, currentUser:", auth.currentUser);
   if (auth.currentUser) {
     await saveChatsToFirestore();
   } else {
@@ -372,10 +369,8 @@ async function sendQuery() {
   try {
     const contextPrompt = buildContextPrompt(prompt);
 
+    // Replace puter.ai.chat with your actual chat API call
     const response = await puter.ai.chat(contextPrompt, { model, stream: true });
-
-    console.log("Response from puter.ai.chat:", response);
-    console.log("Is response async iterable?", !!response[Symbol.asyncIterator]);
 
     if (response[Symbol.asyncIterator]) {
       // Streaming response
@@ -420,6 +415,7 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
+    // Replace puter.ai.txt2img with your actual image generation API call
     const img = await puter.ai.txt2img(prompt);
     await addMessage("user", prompt);
     await addMessage("assistant", "[Image generated below]");
@@ -430,15 +426,16 @@ async function generateImage() {
     const imgElem = document.createElement("img");
     imgElem.src = img.src;
     imgElem.style.maxWidth = "100%";
-    imgElem.alt = "Generated image";
+       imgElem.alt = "Generated image";
     imgBubble.appendChild(imgElem);
     chatDiv.appendChild(imgBubble);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     statusDiv.textContent = "Image generated.";
     promptInput.value = "";
-  } catch {
-      statusDiv.textContent = "Error generating image.";
+  } catch (e) {
+    console.error("Error generating image:", e);
+    statusDiv.textContent = "Error generating image.";
   }
 }
 
@@ -484,11 +481,12 @@ function setupVoiceRecognition() {
 }
 
 function showMicPermissionPrompt() {
-  micPermissionPrompt.style.display = "flex";
+  micPermissionPrompt.classList.add("active");
+  micPermissionPrompt.focus();
 }
 
 function hideMicPermissionPrompt() {
-  micPermissionPrompt.style.display = "none";
+  micPermissionPrompt.classList.remove("active");
 }
 
 function toggleVoiceInput() {
@@ -549,16 +547,44 @@ function loadDarkMode() {
   }
 }
 
+// ------------------- SIDEBAR TOGGLE FOR MOBILE -------------------
+
+sidebarToggle.addEventListener("click", () => {
+  sidebar.classList.toggle("collapsed");
+});
+
+document.addEventListener("click", (e) => {
+  if (window.innerWidth <= 768) {
+    if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+      sidebar.classList.add("collapsed");
+    }
+  }
+});
+
+function checkWidth() {
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add("collapsed");
+  } else {
+    sidebar.classList.remove("collapsed");
+  }
+}
+window.addEventListener("resize", checkWidth);
+window.addEventListener("load", checkWidth);
+
 // ------------------- LOGIN MODAL SHOW/HIDE -------------------
 
 function showLogin() {
   loginModal.classList.remove("hidden");
   loginModal.classList.add("active");
+  emailInput.focus();
 }
 
 function hideLogin() {
   loginModal.classList.remove("active");
   loginModal.classList.add("hidden");
+  loginError.textContent = "";
+  emailInput.value = "";
+  passwordInput.value = "";
 }
 
 // Close login modal when clicking outside the form
@@ -572,17 +598,14 @@ loginModal.addEventListener("click", (e) => {
 
 // Update auth button text and behavior based on user state
 function updateAuthButton(user) {
-  console.log("updateAuthButton called, user:", user);
   if (user) {
     authBtn.textContent = "Logout";
     authBtn.onclick = async () => {
-      console.log("Logout clicked");
       await signOut(auth);
     };
   } else {
     authBtn.textContent = "Login / Sign Up";
     authBtn.onclick = () => {
-      console.log("Login button clicked");
       showLogin();
     };
   }
@@ -600,8 +623,6 @@ loginBtn.addEventListener("click", async () => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     hideLogin();
-    emailInput.value = "";
-    passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message;
   }
@@ -619,8 +640,6 @@ signupBtn.addEventListener("click", async () => {
   try {
     await createUserWithEmailAndPassword(auth, email, password);
     hideLogin();
-    emailInput.value = "";
-    passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message;
   }
@@ -634,8 +653,6 @@ googleSignInBtn.addEventListener("click", async () => {
   try {
     await signInWithPopup(auth, provider);
     hideLogin();
-    emailInput.value = "";
-    passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message || "Google sign-in failed.";
   }
@@ -643,16 +660,13 @@ googleSignInBtn.addEventListener("click", async () => {
 
 // Listen for auth state changes and update UI accordingly
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state changed:", user);
   updateAuthButton(user);
 
   if (user) {
     hideLogin();
     chats = await loadChatsFromFirestore(user.uid);
-    console.log("Loaded chats from Firestore:", chats);
   } else {
     chats = loadChatsFromLocalStorage();
-    console.log("Loaded chats from localStorage:", chats);
   }
 
   if (Object.keys(chats).length === 0) {
@@ -693,7 +707,6 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       recognition.start();
     } catch (err) {
-      console.error("Error starting recognition:", err);
       statusDiv.textContent = "Error starting voice recognition: " + err.message;
     }
   });
@@ -703,8 +716,9 @@ window.addEventListener("DOMContentLoaded", () => {
     statusDiv.textContent = "Microphone permission denied.";
   });
 
-  // Show login modal on page load
-  window.addEventListener("load", () => {
+  // Optionally show login modal on page load if no user
+  if (!auth.currentUser) {
     showLogin();
-  });
+  }
 });
+
