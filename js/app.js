@@ -229,7 +229,7 @@ async function createMessageElement(msg) {
     if (part.type === "text") {
       const p = document.createElement("p");
       p.className = "bubble assistant";
-      p.textContent = part.content.trim();
+      p.textContent = String(part.content).trim();  // <-- Fixed here
       container.appendChild(p);
     } else if (part.type === "code") {
       const wrapper = document.createElement("div");
@@ -441,13 +441,13 @@ function setupVoiceRecognition() {
     statusDiv.textContent = "Voice input not supported in this browser.";
     return;
   }
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
   recognition.lang = "en-US";
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => {
+  recognition.onstart = () => {
     isListening = true;
     voiceInputBtn.textContent = "🎙️ Listening... (click to stop)";
     statusDiv.textContent = "Listening...";
@@ -696,4 +696,3 @@ window.addEventListener("DOMContentLoaded", () => {
     showLogin();
   });
 });
-
