@@ -142,7 +142,7 @@ function renderChatList() {
       switchChat(id);
 
       if (window.innerWidth <= 768) {
-        sidebar.classList.add("collapsed");
+        sidebar.classList.remove("open");
         document.body.style.overflow = "";
       }
     });
@@ -457,7 +457,7 @@ function toggleDarkMode() {
 }
 
 function loadDarkMode() {
-    if (localStorage.getItem("darkMode") === "true") {
+   if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark");
     sidebar.classList.add("dark");
     newChatForm.classList.add("dark");
@@ -468,39 +468,44 @@ function loadDarkMode() {
   }
 }
 
-// ------------------- SIDEBAR TOGGLE FOR MOBILE -------------------
+// ------------------- SIDEBAR TOGGLE FOR MOBILE + DESKTOP -------------------
 
 sidebarToggle.addEventListener("click", () => {
-  sidebar.classList.toggle("collapsed");
-  if (!sidebar.classList.contains("collapsed")) {
-    // Sidebar opened - lock body scroll
-    document.body.style.overflow = "hidden";
+  if (window.innerWidth <= 768) {
+    // Mobile: toggle 'open' class
+    sidebar.classList.toggle("open");
+    if (sidebar.classList.contains("open")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
   } else {
-    // Sidebar closed - unlock body scroll
-    document.body.style.overflow = "";
+    // Desktop: toggle 'collapsed' class
+    sidebar.classList.toggle("collapsed");
+    document.getElementById("main").classList.toggle("collapsed");
   }
 });
 
+// Close sidebar on mobile when clicking outside
 document.addEventListener("click", (e) => {
   if (window.innerWidth <= 768) {
     if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-      sidebar.classList.add("collapsed");
+      sidebar.classList.remove("open");
       document.body.style.overflow = "";
     }
   }
 });
 
-function checkWidth() {
-  if (window.innerWidth <= 768) {
-    sidebar.classList.add("collapsed");
+// Reset sidebar state on resize
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 768) {
+    sidebar.classList.remove("open");
     document.body.style.overflow = "";
   } else {
     sidebar.classList.remove("collapsed");
-    document.body.style.overflow = "";
+    document.getElementById("main").classList.remove("collapsed");
   }
-}
-window.addEventListener("resize", checkWidth);
-window.addEventListener("load", checkWidth);
+});
 
 // ------------------- LOGIN MODAL SHOW/HIDE -------------------
 
@@ -660,21 +665,8 @@ window.addEventListener("DOMContentLoaded", () => {
     authBtn.dataset.listenerAttached = "true";
   }
 
-  if (!sidebarToggle.dataset.listenerAttached) {
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("collapsed");
-      if (!sidebar.classList.contains("collapsed")) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "";
-      }
-    });
-    sidebarToggle.dataset.listenerAttached = "true";
-  }
-
   // Optionally show login modal on page load if no user
   if (!auth.currentUser) {
     showLogin();
   }
 });
-
