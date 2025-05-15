@@ -75,12 +75,16 @@ function debounce(fn, delay) {
 // ------------------- FIRESTORE SYNC -------------------
 
 async function saveChatsToFirestore() {
-  if (!auth.currentUser) return;
+  if (!auth.currentUser) {
+    console.warn("saveChatsToFirestore called but no user");
+    return;
+  }
   try {
     const docRef = doc(db, "users", auth.currentUser.uid);
-    await setDoc(docRef, { chats });
+    await setDoc(docRef, { chats }, { merge: true }); // Use merge:true to avoid overwriting other data
+    console.log("Chats saved to Firestore");
   } catch (error) {
-    console.error("Error saving chats:", error);
+    console.error("Error saving chats to Firestore:", error);
   }
 }
 
@@ -94,7 +98,7 @@ async function loadChatsFromFirestore(userId) {
       return {};
     }
   } catch (error) {
-    console.error("Error loading chats:", error);
+    console.error("Error loading chats from Firestore:", error);
     return {};
   }
 }
@@ -102,7 +106,12 @@ async function loadChatsFromFirestore(userId) {
 // ------------------- LOCAL STORAGE -------------------
 
 function saveChatsToLocalStorage() {
-  localStorage.setItem("personal_ai_chats", JSON.stringify(chats));
+  try {
+    localStorage.setItem("personal_ai_chats", JSON.stringify(chats));
+    console.log("Chats saved to localStorage");
+  } catch (e) {
+    console.error("Error saving chats to localStorage:", e);
+  }
 }
 
 function loadChatsFromLocalStorage() {
@@ -119,9 +128,10 @@ function loadChatsFromLocalStorage() {
 
 // ------------------- CHAT STORAGE -------------------
 
-function saveChats() {
+async function saveChats() {
+  console.log("saveChats called, currentUser:", auth.currentUser);
   if (auth.currentUser) {
-    saveChatsToFirestore();
+    await saveChatsToFirestore();
   } else {
     saveChatsToLocalStorage();
   }
@@ -149,7 +159,7 @@ function renderChatList() {
     delBtn.textContent = "×";
     delBtn.className = "delete-btn";
     delBtn.title = "Delete chat";
-    delBtn.addEventListener("click", (e) => {
+    delBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (
         confirm(
@@ -157,13 +167,13 @@ function renderChatList() {
         )
       ) {
         delete chats[id];
-        saveChats();
+        await saveChats();
         if (currentChatId === id) {
           const remainingIds = Object.keys(chats);
           if (remainingIds.length > 0) {
             switchChat(remainingIds[0]);
           } else {
-            createNewChat("Default Chat");
+            await createNewChat("Default Chat");
           }
         } else {
           renderChatList();
@@ -229,7 +239,7 @@ async function createMessageElement(msg) {
     if (part.type === "text") {
       const p = document.createElement("p");
       p.className = "bubble assistant";
-      p.textContent = String(part.content).trim();  // <-- Fixed here
+      p.textContent = String(part.content).trim();
       container.appendChild(p);
     } else if (part.type === "code") {
       const wrapper = document.createElement("div");
@@ -297,15 +307,15 @@ async function renderMessages() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-function addMessage(role, text) {
+async function addMessage(role, text) {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
   chat.messages.push({ role, text });
   if (chat.messages.length > 50) chat.messages.shift();
-  saveChats();
+  await saveChats();
 }
 
-function createNewChat(name) {
+async function createNewChat(name) {
   if (!name.trim()) {
     alert("Enter a chat name");
     return;
@@ -316,7 +326,7 @@ function createNewChat(name) {
     messages: [],
     model: "deepseek-chat",
   };
-  saveChats();
+  await saveChats();
   switchChat(id);
   newChatNameInput.value = "";
 }
@@ -349,14 +359,14 @@ async function sendQuery() {
     return;
   }
 
-  addMessage("user", prompt);
+  await addMessage("user", prompt);
   promptInput.value = "";
   statusDiv.textContent = "Thinking...";
   await renderMessages();
 
   if (currentChatId) {
     chats[currentChatId].model = model;
-    saveChats();
+    await saveChats();
   }
 
   try {
@@ -370,7 +380,7 @@ async function sendQuery() {
     if (response[Symbol.asyncIterator]) {
       // Streaming response
       let assistantReply = "";
-      addMessage("assistant", "");
+      await addMessage("assistant", "");
       await renderMessages();
 
       const chat = chats[currentChatId];
@@ -380,7 +390,7 @@ async function sendQuery() {
         if (part?.text) {
           assistantReply += part.text;
           lastMsg.text = assistantReply;
-          saveChats();
+          await saveChats();
           await renderMessages();
           chatDiv.scrollTop = chatDiv.scrollHeight;
         }
@@ -391,7 +401,7 @@ async function sendQuery() {
     } else {
       // Non-streaming response fallback
       const assistantReply = response.message?.content || response;
-      addMessage("assistant", assistantReply);
+      await addMessage("assistant", assistantReply);
       await renderMessages();
       statusDiv.textContent = "";
       if (assistantVoiceEnabled) speakText(assistantReply);
@@ -411,8 +421,8 @@ async function generateImage() {
   statusDiv.textContent = "Generating image...";
   try {
     const img = await puter.ai.txt2img(prompt);
-    addMessage("user", prompt);
-    addMessage("assistant", "[Image generated below]");
+    await addMessage("user", prompt);
+    await addMessage("assistant", "[Image generated below]");
     await renderMessages();
 
     const imgBubble = document.createElement("div");
@@ -428,7 +438,7 @@ async function generateImage() {
     statusDiv.textContent = "Image generated.";
     promptInput.value = "";
   } catch {
-    statusDiv.textContent = "Error generating image.";
+      statusDiv.textContent = "Error generating image.";
   }
 }
 
@@ -441,7 +451,7 @@ function setupVoiceRecognition() {
     statusDiv.textContent = "Voice input not supported in this browser.";
     return;
   }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
   recognition.lang = "en-US";
   recognition.interimResults = false;
@@ -633,18 +643,20 @@ googleSignInBtn.addEventListener("click", async () => {
 
 // Listen for auth state changes and update UI accordingly
 onAuthStateChanged(auth, async (user) => {
+  console.log("Auth state changed:", user);
   updateAuthButton(user);
 
   if (user) {
     hideLogin();
     chats = await loadChatsFromFirestore(user.uid);
+    console.log("Loaded chats from Firestore:", chats);
   } else {
-    // Load from localStorage if no user
     chats = loadChatsFromLocalStorage();
+    console.log("Loaded chats from localStorage:", chats);
   }
 
   if (Object.keys(chats).length === 0) {
-    createNewChat("Default Chat");
+    await createNewChat("Default Chat");
   } else {
     switchChat(Object.keys(chats)[0]);
   }
