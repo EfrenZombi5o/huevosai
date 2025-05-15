@@ -14,58 +14,460 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"
   />
 
-  <!-- Your CSS -->
-  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* --- Variables --- */
+    :root {
+      --bg-light: #f9f9f9;
+      --bg-dark: #121212;
+      --text-light: #222;
+      --text-dark: #eee;
+      --user-bubble-light: #d1e7ff;
+      --assistant-bubble-light: #e9ecef;
+      --user-bubble-dark: #2a4d7d;
+      --assistant-bubble-dark: #444;
+      --primary: #6a4fcf; /* updated to space purple */
+      --primary-dark: #4b2e7a; /* darker purple */
+      --input-bg-light: #f0e9ff; /* light purple background */
+      --input-bg-dark: #4b2e7a; /* dark purple background */
+    }
+
+    /* --- Base styles --- */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-light);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.dark {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    /* Sidebar toggle button */
+    #sidebarToggle {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: background-color 0.3s ease;
+    }
+
+    #sidebarToggle:hover {
+      background: var(--primary-dark);
+    }
+
+    /* --- Sidebar --- */
+    #sidebar {
+      width: 250px;
+      background: inherit;
+      border-right: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.3s ease, transform 0.3s ease;
+      height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+      transform: translateX(0);
+    }
+
+    #sidebar.dark {
+      border-color: #444;
+      background: var(--bg-dark);
+    }
+
+    /* Chat list header */
+    #chatListHeader {
+      padding: 1em;
+      font-weight: 700;
+      font-size: 1.2em;
+      border-bottom: 1px solid #ccc;
+      transition: border-color 0.3s ease;
+    }
+
+    #chatListHeader.dark {
+      border-color: #444;
+    }
+
+    /* Chat list */
+    #chatList {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5em 1em;
+      margin: 0;
+      list-style: none;
+    }
+
+    #chatList li {
+      position: relative;
+      padding: 0.5em 0.75em;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 0.3em;
+      background: var(--assistant-bubble-light);
+      color: var(--text-light);
+      font-weight: 600;
+      user-select: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #chatList li.dark {
+      background: var(--assistant-bubble-dark);
+      color: var(--text-dark);
+    }
+
+    #chatList li.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Delete button in chat list */
+    #chatList li .delete-btn {
+      font-weight: bold;
+      color: #888;
+      cursor: pointer;
+      user-select: none;
+      font-size: 1.1em;
+      padding: 0 4px;
+      border-radius: 4px;
+      transition: color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    #chatList li .delete-btn:hover {
+      color: #f44336;
+    }
+
+    /* New chat form */
+    #newChatForm {
+      padding: 0.5em 1em;
+      border-top: 1px solid #ccc;
+      transition: border-color 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #newChatForm.dark {
+      border-color: #444;
+    }
+
+    #newChatName {
+      width: 100%;
+      padding: 0.4em 0.6em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      background: var(--input-bg-light);
+      color: var(--text-light);
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    #newChatName.dark {
+      border-color: #555;
+      background: var(--input-bg-dark);
+      color: var(--text-dark);
+    }
+
+    #createChatBtn {
+      margin-top: 0.5em;
+      width: 100%;
+      padding: 0.5em;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #createChatBtn:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* --- Main chat area --- */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin-left: 250px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75em;
+      background: inherit;
+    }
+
+    /* Chat bubbles */
+    .bubble {
+      max-width: 70%;
+      padding: 0.75em 1em;
+      border-radius: 20px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: var(--user-bubble-light);
+      color: var(--text-light);
+      border-bottom-right-radius: 4px;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background-color: var(--assistant-bubble-light);
+      color: var(--text-light);
+      border-bottom-left-radius: 4px;
+    }
+
+    body.dark .user {
+      background-color: var(--user-bubble-dark);
+      color: #cce4ff;
+    }
+
+    body.dark .assistant {
+      background-color: var(--assistant-bubble-dark);
+      color: var(--text-dark);
+    }
+
+    /* Status text */
+    #status {
+      font-size: 0.9em;
+      color: gray;
+      padding: 0 1em 0.5em;
+      min-height: 1.2em;
+    }
+
+    /* Input area */
+    #input-area {
+      display: flex;
+      padding: 0.5em 1em;
+      border-top: 1px solid #ccc;
+      background: inherit;
+      transition: border-color 0.3s ease;
+    }
+
+    body.dark #input-area {
+      border-color: #444;
+    }
+
+    #prompt {
+      flex: 1;
+      padding: 0.5em 1em;
+      font-size: 1em;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      background: var(--input-bg-light);
+      color: var(--text-light);
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body.dark #prompt {
+      border-color: #555;
+      background: var(--input-bg-dark);
+      color: var(--text-dark);
+    }
+
+    #prompt:focus {
+      border-color: var(--primary);
+    }
+
+    /* Buttons */
+    button {
+      margin-left: 0.5em;
+      padding: 0 1em;
+      font-size: 1em;
+      border-radius: 20px;
+      border: none;
+      background-color: var(--primary);
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* Controls area */
+    #controls {
+      display: flex;
+      align-items: center;
+      padding: 0.5em 1em;
+      border-top: 1px solid #ccc;
+      background: inherit;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      transition: border-color 0.3s ease;
+    }
+
+    body.dark #controls {
+      border-color: #444;
+    }
+
+    select,
+    input[type='text'] {
+      font-size: 1em;
+      padding: 0.3em 0.5em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: var(--input-bg-light);
+      color: var(--text-light);
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body.dark select,
+    body.dark input[type='text'] {
+      border-color: #555;
+      background: var(--input-bg-dark);
+      color: var(--text-dark);
+    }
+
+    /* Fix for select dropdown text visibility */
+    select {
+      color: inherit;
+      background-color: inherit;
+    }
+
+    select option {
+      color: var(--text-light);
+      background-color: var(--input-bg-light);
+    }
+
+    body.dark select option {
+      color: var(--text-dark);
+      background-color: var(--input-bg-dark);
+    }
+
+    /* Dark mode toggle and voice toggle buttons */
+    #darkModeToggle,
+    #voiceToggle {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1.4em;
+      color: var(--primary);
+      transition: color 0.3s ease;
+    }
+
+    #darkModeToggle:hover,
+    #voiceToggle:hover {
+      color: var(--primary-dark);
+    }
+
+    /* --- Responsive Sidebar and Layout --- */
+
+    @media (max-width: 768px) {
+      /* Sidebar toggle button visible on mobile */
+      #sidebarToggle {
+        display: block;
+      }
+
+      /* Sidebar becomes fixed top panel */
+      #sidebar {
+        width: 100%;
+        height: 200px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+        box-shadow: none;
+        background: var(--bg-light);
+        transform: translateX(0);
+        z-index: 1000;
+      }
+
+      body.dark #sidebar {
+        background: var(--bg-dark);
+      }
+
+      /* Sidebar hidden by default on mobile */
+      #sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+
+      /* Main content below sidebar */
+      #main {
+        margin-left: 0;
+        margin-top: 200px;
+        height: calc(100vh - 200px);
+      }
+    }
+  </style>
 </head>
 <body>
+  <!-- Sidebar toggle button -->
+  <button id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+
   <!-- Login Modal -->
   <div id="loginModal" style="display:flex;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:10000;">
     <div style="background:#fff;padding:20px;border-radius:8px;max-width:320px;width:100%;text-align:center;box-sizing:border-box;">
       <h2>Login or Sign Up</h2>
       <input type="email" id="emailInput" placeholder="Email" style="width:100%;padding:8px;margin:8px 0;border-radius:4px;border:1px solid #ccc;" />
       <input type="password" id="passwordInput" placeholder="Password" style="width:100%;padding:8px;margin:8px 0;border-radius:4px;border:1px solid #ccc;" />
-      <button id="loginBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#6200ee;color:#fff;border-radius:4px;cursor:pointer;">Login</button>
-      <button id="signupBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#03dac6;color:#000;border-radius:4px;cursor:pointer;">Sign Up</button>
-
-      <!-- Google Sign-In Button -->
-      <button id="googleSignInBtn" style="width:100%;padding:10px;margin-top:12px;border:none;background:#4285F4;color:#fff;border-radius:4px;cursor:pointer;font-weight:600;">
-        Sign in with Google
-      </button>
-
-      <p id="loginError" style="color:red;margin-top:8px;min-height:1.2em;"></p>
+            <button id="loginBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#6200ee;color:#fff;border-radius:6px;cursor:pointer;">Login</button>
+      <button id="signupBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#4b2e7a;color:#fff;border-radius:6px;cursor:pointer;">Sign Up</button>
+      <button id="googleSignInBtn" style="width:100%;padding:10px;margin-top:8px;background:#4285F4;color:#fff;border:none;border-radius:6px;cursor:pointer;">Sign in with Google</button>
+      <div id="loginError" style="color:#f44336;margin-top:10px;min-height:1.2em;"></div>
     </div>
   </div>
 
-  <div id="sidebar">
+  <div id="sidebar" class="">
     <div id="chatListHeader">Chats</div>
-    <ul id="chatList"></ul>
+    <ul id="chatList">
+      <!-- Chat items will be dynamically generated -->
+    </ul>
     <form id="newChatForm">
-      <input
-        type="text"
-        id="newChatName"
-        placeholder="New chat name"
-        autocomplete="off"
-        required
-      />
+      <input type="text" id="newChatName" placeholder="New chat name" autocomplete="off" required />
       <button type="submit" id="createChatBtn">Create Chat</button>
     </form>
   </div>
 
   <div id="main">
-    <div id="chat"></div>
-    <div id="status"></div>
+    <div id="chat" aria-live="polite" aria-label="Chat messages">
+      <!-- Chat messages will appear here -->
+    </div>
+    <div id="status" aria-live="assertive"></div>
     <div id="input-area">
-      <textarea
-        id="prompt"
-        rows="2"
-        placeholder="Type your message..."
-        autocomplete="off"
-      ></textarea>
-      <button id="voiceInputBtn" title="Voice Input">🎤</button>
-      <button id="sendBtn" title="Send Message">➡️</button>
+      <textarea id="prompt" rows="2" placeholder="Type your message..." autocomplete="off"></textarea>
+      <button id="voiceInputBtn" title="Voice Input" aria-label="Voice Input">🎤</button>
+      <button id="sendBtn" title="Send Message" aria-label="Send Message">➡️</button>
     </div>
     <div id="controls">
-      <select id="modelSelect" title="Select AI Model">
+      <select id="modelSelect" title="Select AI Model" aria-label="Select AI Model">
         <optgroup label="DeepSeek Models">
           <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
           <option value="deepseek-reasoner">DeepSeek Reasoner (DeepSeek R1)</option>
@@ -83,34 +485,72 @@
           <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
         </optgroup>
       </select>
-      <button id="generateImageBtn" title="Generate Image">🖼️</button>
-      <button id="voiceToggle" title="Toggle Assistant Voice">🔊</button>
-      <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+      <button id="generateImageBtn" title="Generate Image" aria-label="Generate Image">🖼️</button>
+      <button id="voiceToggle" title="Toggle Assistant Voice" aria-label="Toggle Assistant Voice">🔊</button>
+      <button id="darkModeToggle" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">🌙</button>
     </div>
   </div>
 
-  <!-- Mic permission prompt -->
-  <div id="micPermissionPrompt" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:10000;">
-    <div style="background:#fff;padding:20px;border-radius:8px;max-width:320px;width:90%;text-align:center;box-sizing:border-box;">
-      <p>This app needs access to your microphone to enable voice input.</p>
-      <button id="allowMicBtn" style="margin:8px;padding:10px 20px;border:none;background:#6200ee;color:#fff;border-radius:4px;cursor:pointer;">Allow Microphone</button>
-      <button id="denyMicBtn" style="margin:8px;padding:10px 20px;border:none;background:#ccc;color:#000;border-radius:4px;cursor:pointer;">Cancel</button>
-    </div>
-  </div>
+  <!-- Highlight.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-  <!-- External AI SDK -->
-  <script src="https://js.puter.com/v2/" defer></script>
+  <!-- Your Firebase and app scripts should be imported here -->
+  <!-- Example: <script type="module" src="./js/app.js"></script> -->
 
-  <!-- Highlight.js JS -->
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"
-    defer
-  ></script>
+  <script>
+    // Sidebar toggle button logic for mobile
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
 
-  <!-- Firebase Initialization -->
-  <script type="module" src="js/firebase-app.js"></script>
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+    });
 
-  <!-- Your JavaScript -->
-  <script type="module" src="js/app.js"></script>
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+          sidebar.classList.add('collapsed');
+        }
+      }
+    });
+
+    // Initially collapse sidebar on mobile
+    function checkWidth() {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.add('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+      }
+    }
+    window.addEventListener('resize', checkWidth);
+    window.addEventListener('load', checkWidth);
+
+    // Dark mode toggle example (you can expand this)
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      // Save preference to localStorage if desired
+      localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'true' : 'false');
+    });
+
+    // Load dark mode preference on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+      }
+    });
+
+    // Initialize highlight.js (for code blocks)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.hljs) {
+        document.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+      }
+    });
+
+    // TODO: Add your existing app logic here (chat loading, sending, auth, voice, etc.)
+  </script>
 </body>
 </html>
