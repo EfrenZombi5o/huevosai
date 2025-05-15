@@ -15,14 +15,14 @@
   />
 
   <!-- Your custom CSS -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <!-- Sidebar toggle button -->
   <button id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
 
   <!-- Login Modal -->
-  <div id="loginModal" class="active" aria-modal="true" role="dialog" aria-labelledby="loginTitle" tabindex="-1">
+  <div id="loginModal" class="hidden" aria-modal="true" role="dialog" aria-labelledby="loginTitle" tabindex="-1">
     <div>
       <h2 id="loginTitle">Login or Sign Up</h2>
       <input type="email" id="emailInput" placeholder="Email" autocomplete="email" />
@@ -35,7 +35,7 @@
   </div>
 
   <!-- Mic Permission Prompt -->
-  <div id="micPermissionPrompt" role="alertdialog" aria-modal="true" aria-labelledby="micPromptText" tabindex="-1">
+  <div id="micPermissionPrompt" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="micPromptText" tabindex="-1">
     <div>
       <p id="micPromptText">Allow microphone access to use voice input?</p>
       <button id="allowMicBtn">Allow</button>
@@ -92,77 +92,7 @@
   <!-- Highlight.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-  <!-- Your Firebase and app scripts should be imported here -->
-  <!-- Example: <script type="module" src="./js/app.js"></script> -->
-
-  <script>
-    // Sidebar toggle button logic for mobile
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-
-    sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768) {
-        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-          sidebar.classList.add('collapsed');
-        }
-      }
-    });
-
-    // Initially collapse sidebar on mobile
-    function checkWidth() {
-      if (window.innerWidth <= 768) {
-        sidebar.classList.add('collapsed');
-      } else {
-        sidebar.classList.remove('collapsed');
-      }
-    }
-    window.addEventListener('resize', checkWidth);
-    window.addEventListener('load', checkWidth);
-
-    // Dark mode toggle example (you can expand this)
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      sidebar.classList.toggle('dark');
-      document.getElementById('newChatForm').classList.toggle('dark');
-      document.querySelectorAll('#chatList li').forEach(li => li.classList.toggle('dark'));
-      if (document.body.classList.contains('dark')) {
-        darkModeToggle.textContent = "☀️";
-        localStorage.setItem('darkMode', 'true');
-      } else {
-        darkModeToggle.textContent = "🌙";
-        localStorage.setItem('darkMode', 'false');
-      }
-    });
-
-    // Load dark mode preference on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark');
-        sidebar.classList.add('dark');
-        document.getElementById('newChatForm').classList.add('dark');
-        document.querySelectorAll('#chatList li').forEach(li => li.classList.add('dark'));
-        darkModeToggle.textContent = "☀️";
-      } else {
-        darkModeToggle.textContent = "🌙";
-      }
-    });
-
-    // Initialize highlight.js (for code blocks)
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.hljs) {
-        document.querySelectorAll('pre code').forEach((block) => {
-          hljs.highlightElement(block);
-        });
-      }
-    });
-
-    // TODO: Add your existing app logic here (chat loading, sending, auth, voice, etc.)
-  </script>
+  <!-- Your Firebase and app scripts -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
