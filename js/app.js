@@ -46,6 +46,7 @@ sidebar.insertBefore(authBtn, sidebar.firstChild);
 // State variables
 let chats = {};
 let currentChatId = null;
+let isSending = false;
 
 // Utility delay function
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -140,7 +141,6 @@ function renderChatList() {
       if (e.target.classList.contains("delete-btn")) return;
       switchChat(id);
 
-      // Auto-close sidebar on mobile after chat selection
       if (window.innerWidth <= 768) {
         sidebar.classList.add("collapsed");
         document.body.style.overflow = "";
@@ -343,32 +343,37 @@ const debouncedHighlight = debounce((codeEl) => {
 // ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
 async function sendQuery() {
+  if (isSending) return;
+  isSending = true;
+
   const prompt = promptInput.value.trim();
   const model = modelSelect.value;
 
   if (!prompt) {
     alert("Please enter a message.");
+    isSending = false;
     return;
   }
 
-  await addMessage("user", prompt);
-  promptInput.value = "";
-  statusDiv.textContent = "Thinking...";
-  await renderMessages();
-
-  if (currentChatId) {
-    chats[currentChatId].model = model;
-    await saveChats();
-  }
+  sendBtn.disabled = true;
+  promptInput.disabled = true;
 
   try {
+    await addMessage("user", prompt);
+    promptInput.value = "";
+    statusDiv.textContent = "Thinking...";
+    await renderMessages();
+
+    if (currentChatId) {
+      chats[currentChatId].model = model;
+      await saveChats();
+    }
+
     const contextPrompt = buildContextPrompt(prompt);
 
-    // Replace puter.ai.chat with your actual chat API call
     const response = await puter.ai.chat(contextPrompt, { model, stream: true });
 
     if (response[Symbol.asyncIterator]) {
-      // Streaming response
       let assistantReply = "";
       await addMessage("assistant", "");
       await renderMessages();
@@ -388,7 +393,6 @@ async function sendQuery() {
 
       statusDiv.textContent = "";
     } else {
-      // Non-streaming response fallback
       const assistantReply = response.message?.content || response;
       await addMessage("assistant", assistantReply);
       await renderMessages();
@@ -397,6 +401,11 @@ async function sendQuery() {
   } catch (e) {
     console.error("Error in sendQuery:", e);
     statusDiv.textContent = "Error: " + (e.message || JSON.stringify(e));
+  } finally {
+    sendBtn.disabled = false;
+    promptInput.disabled = false;
+    promptInput.focus();
+    isSending = false;
   }
 }
 
@@ -408,7 +417,6 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
-    // Replace puter.ai.txt2img with your actual image generation API call
     const img = await puter.ai.txt2img(prompt);
     await addMessage("user", prompt);
     await addMessage("assistant", "[Image generated below]");
@@ -443,14 +451,13 @@ function toggleDarkMode() {
     darkModeToggle.textContent = "☀️";
     localStorage.setItem("darkMode", "true");
   } else {
-
-        darkModeToggle.textContent = "🌙";
+    darkModeToggle.textContent = "🌙";
     localStorage.setItem("darkMode", "false");
   }
 }
 
 function loadDarkMode() {
-  if (localStorage.getItem("darkMode") === "true") {
+    if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark");
     sidebar.classList.add("dark");
     newChatForm.classList.add("dark");
@@ -642,8 +649,32 @@ window.addEventListener("DOMContentLoaded", () => {
     promptInput.dataset.listenerAttached = "true";
   }
 
+  if (!authBtn.dataset.listenerAttached) {
+    authBtn.addEventListener("click", () => {
+      if (auth.currentUser) {
+        signOut(auth);
+      } else {
+        showLogin();
+      }
+    });
+    authBtn.dataset.listenerAttached = "true";
+  }
+
+  if (!sidebarToggle.dataset.listenerAttached) {
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      if (!sidebar.classList.contains("collapsed")) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    });
+    sidebarToggle.dataset.listenerAttached = "true";
+  }
+
   // Optionally show login modal on page load if no user
   if (!auth.currentUser) {
     showLogin();
   }
 });
+
