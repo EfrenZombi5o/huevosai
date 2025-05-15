@@ -342,6 +342,11 @@ const debouncedHighlight = debounce((codeEl) => {
 
 // ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
+// Wrap sendQuery with debounce to prevent rapid duplicate calls
+const debouncedSendQuery = debounce(() => {
+  sendQuery();
+}, 300);
+
 async function sendQuery() {
   console.log("sendQuery called");
   if (isSending) {
@@ -457,7 +462,7 @@ function toggleDarkMode() {
   } else {
     darkModeToggle.textContent = "🌙";
     localStorage.setItem("darkMode", "false");
-      }
+  }
 }
 
 function loadDarkMode() {
@@ -634,7 +639,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!sendBtn.dataset.listenerAttached) {
     sendBtn.addEventListener("click", () => {
       console.log("Send button clicked");
-      sendQuery();
+      debouncedSendQuery();
     });
     sendBtn.dataset.listenerAttached = "true";
   }
@@ -654,7 +659,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         console.log("Enter pressed in prompt input");
-        sendQuery();
+        debouncedSendQuery();
       }
     });
     promptInput.dataset.listenerAttached = "true";
@@ -676,3 +681,4 @@ window.addEventListener("DOMContentLoaded", () => {
     showLogin();
   }
 });
+
