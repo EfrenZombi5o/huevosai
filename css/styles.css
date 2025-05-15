@@ -8,7 +8,7 @@
   --assistant-bubble-light: #e9ecef;
   --user-bubble-dark: #2a4d7d;
   --assistant-bubble-dark: #444;
-  --primary: #6a4fcf; /* updated to space purple */
+  --primary: #6a4fcf; /* space purple */
   --primary-dark: #4b2e7a; /* darker purple */
   --input-bg-light: #f0e9ff; /* light purple background */
   --input-bg-dark: #4b2e7a; /* dark purple background */
@@ -462,51 +462,62 @@ body.dark select option {
 
 /* --- Login Modal Container --- */
 #loginModal > div {
+  background: #3a1a6a; /* dark purple background */
+  padding: 2rem 2.5rem;
+  border-radius: 16px;
+  width: 320px;       /* narrower width for vertical layout */
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow:
+    0 0 20px rgba(106, 79, 207, 0.7),
+    0 0 40px rgba(180, 0, 255, 0.5);
   position: relative;
   z-index: 1;
   animation: pulseGlow 3s ease-in-out infinite;
-  transition: transform 0.3s ease, opacity 0.3s ease;
   transform: scale(0.8);
   opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-/* Show modal with animation */
 #loginModal.active > div {
   transform: scale(1);
   opacity: 1;
 }
 
-/* Rotating glow ring around modal */
+/* Glow ring around the modal */
 #loginModal > div::before {
   content: "";
   position: absolute;
   top: -12px;
-  bottom: -12px;
   left: -12px;
   right: -12px;
-  border-radius: 16px;
-  pointer-events: none;
-  z-index: -1;
-   background: linear-gradient(45deg, #6a4fcf, #b400ff, #6a4fcf, #b400ff);
+  bottom: -12px;
+  border-radius: 24px;
+  background: linear-gradient(45deg, #6a4fcf, #b400ff, #6a4fcf, #b400ff);
   background-size: 400% 400%;
   filter: drop-shadow(0 0 10px rgba(180, 0, 255, 0.7));
   animation: rotateGlow 8s linear infinite;
+  z-index: -1;
 }
 
-/* --- Login Modal Inner Elements --- */
+/* Heading */
 #loginModal h2 {
   margin: 0;
   font-weight: 700;
-  font-size: 1.8em;
+  font-size: 1.8rem;
   color: #d1c4e9;
+  text-align: center;
 }
 
+/* Inputs */
 #loginModal input {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
   border: none;
-  font-size: 1em;
+  font-size: 1rem;
   background: #4b2e7a;
   color: #e0d7f5;
   outline: none;
@@ -523,16 +534,18 @@ body.dark select option {
   color: white;
 }
 
+/* Buttons */
 #loginModal button {
   width: 100%;
   padding: 12px 0;
   border-radius: 8px;
   border: none;
   font-weight: 700;
-  font-size: 1em;
+  font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s ease;
   user-select: none;
+  margin-top: 0.5rem;
 }
 
 #loginBtn {
@@ -562,75 +575,13 @@ body.dark select option {
   background: #3367d6;
 }
 
+/* Error message */
 #loginError {
   min-height: 1.2em;
   color: #f44336;
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   text-align: center;
-}
-
-/* --- Mic Permission Prompt Modal --- */
-#micPermissionPrompt {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  backdrop-filter: blur(4px);
-}
-
-#micPermissionPrompt.active {
-  display: flex;
-}
-
-#micPermissionPrompt > div {
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 8px;
-  max-width: 320px;
-  width: 90%;
-  text-align: center;
-  box-sizing: border-box;
-  box-shadow: 0 0 15px rgba(0,0,0,0.3);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-#micPermissionPrompt p {
-  margin-bottom: 20px;
-  font-size: 1.1em;
-  color: #333;
-}
-
-#micPermissionPrompt button {
-  margin: 0 10px;
-  padding: 10px 20px;
-  border-radius: 6px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.3s ease;
-}
-
-#allowMicBtn {
-  background-color: var(--primary);
-  color: white;
-}
-
-#allowMicBtn:hover {
-  background-color: var(--primary-dark);
-}
-
-#denyMicBtn {
-  background-color: #f44336;
-  color: white;
-}
-
-#denyMicBtn:hover {
-  background-color: #d32f2f;
+  margin-top: 0.25rem;
 }
 
