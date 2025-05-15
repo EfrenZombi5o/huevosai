@@ -441,7 +441,8 @@ function toggleDarkMode() {
     darkModeToggle.textContent = "☀️";
     localStorage.setItem("darkMode", "true");
   } else {
-       darkModeToggle.textContent = "🌙";
+    darkModeToggle.textContent = "🌙";
+   
     localStorage.setItem("darkMode", "false");
   }
 }
@@ -594,24 +595,43 @@ onAuthStateChanged(auth, async (user) => {
 window.addEventListener("DOMContentLoaded", () => {
   loadDarkMode();
 
-  newChatForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    createNewChat(newChatNameInput.value);
-  });
-  sendBtn.addEventListener("click", sendQuery);
-  generateImageBtn.addEventListener("click", generateImage);
-  darkModeToggle.addEventListener("click", toggleDarkMode);
-
-  promptInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  if (!newChatForm.dataset.listenerAttached) {
+    newChatForm.addEventListener("submit", (e) => {
       e.preventDefault();
+      createNewChat(newChatNameInput.value);
+    });
+    newChatForm.dataset.listenerAttached = "true";
+  }
+
+  if (!sendBtn.dataset.listenerAttached) {
+    sendBtn.addEventListener("click", () => {
       sendQuery();
-    }
-  });
+    });
+    sendBtn.dataset.listenerAttached = "true";
+  }
+
+  if (!generateImageBtn.dataset.listenerAttached) {
+    generateImageBtn.addEventListener("click", generateImage);
+    generateImageBtn.dataset.listenerAttached = "true";
+  }
+
+  if (!darkModeToggle.dataset.listenerAttached) {
+    darkModeToggle.addEventListener("click", toggleDarkMode);
+    darkModeToggle.dataset.listenerAttached = "true";
+  }
+
+  if (!promptInput.dataset.listenerAttached) {
+    promptInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendQuery();
+      }
+    });
+    promptInput.dataset.listenerAttached = "true";
+  }
 
   // Optionally show login modal on page load if no user
   if (!auth.currentUser) {
     showLogin();
   }
 });
-
