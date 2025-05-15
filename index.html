@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Assistant with Voice & Code Typing + Chat Delete</title>
+  <title>AI Assistant with Code Typing + Chat Delete</title>
 
   <!-- Google Fonts: Fira Code for code blocks -->
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
@@ -34,14 +34,7 @@
     </div>
   </div>
 
-  <!-- Mic Permission Prompt -->
-  <div id="micPermissionPrompt" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="micPromptText" tabindex="-1">
-    <div>
-      <p id="micPromptText">Allow microphone access to use voice input?</p>
-      <button id="allowMicBtn">Allow</button>
-      <button id="denyMicBtn">Deny</button>
-    </div>
-  </div>
+  <!-- Removed Mic Permission Prompt -->
 
   <div id="sidebar" class="">
     <div id="chatListHeader">Chats</div>
@@ -61,7 +54,7 @@
     <div id="status" aria-live="assertive" role="status"></div>
     <div id="input-area">
       <textarea id="prompt" rows="2" placeholder="Type your message..." autocomplete="off" aria-label="Message input"></textarea>
-      <button id="voiceInputBtn" title="Voice Input" aria-label="Voice Input">🎤</button>
+      <!-- Removed voiceInputBtn -->
       <button id="sendBtn" title="Send Message" aria-label="Send Message">➡️</button>
     </div>
     <div id="controls">
@@ -84,7 +77,7 @@
         </optgroup>
       </select>
       <button id="generateImageBtn" title="Generate Image" aria-label="Generate Image">🖼️</button>
-      <button id="voiceToggle" title="Toggle Assistant Voice" aria-label="Toggle Assistant Voice">🔊</button>
+      <!-- Removed voiceToggle button -->
       <button id="darkModeToggle" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">🌙</button>
     </div>
   </div>
@@ -92,7 +85,7 @@
   <!-- Highlight.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-  <!-- Puter.js SDK (Add this line) -->
+  <!-- Puter.js SDK -->
   <script src="https://js.puter.com/v2/"></script>
 
   <!-- Your Firebase and app scripts -->
