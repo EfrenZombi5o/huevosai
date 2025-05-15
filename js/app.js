@@ -299,8 +299,10 @@ async function renderMessages() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
+// <-- Added console log here to track message additions -->
 async function addMessage(role, text) {
   if (!currentChatId) return;
+  console.log(`addMessage called: role=${role}, text=${text.slice(0, 30)}`);
   const chat = chats[currentChatId];
   chat.messages.push({ role, text });
   if (chat.messages.length > 50) chat.messages.shift();
