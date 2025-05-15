@@ -1,4 +1,4 @@
-/* --- Styles --- */
+/* --- Variables --- */
 :root {
   --bg-light: #f9f9f9;
   --bg-dark: #121212;
@@ -8,12 +8,13 @@
   --assistant-bubble-light: #e9ecef;
   --user-bubble-dark: #2a4d7d;
   --assistant-bubble-dark: #444;
-  --primary: #007bff;
-  --primary-dark: #0056b3;
-  --input-bg-light: #fff;
-  --input-bg-dark: #2a2a2a;
+  --primary: #6a4fcf; /* updated to space purple */
+  --primary-dark: #4b2e7a; /* darker purple */
+  --input-bg-light: #f0e9ff; /* light purple background */
+  --input-bg-dark: #4b2e7a; /* dark purple background */
 }
 
+/* --- Base styles --- */
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,6 +23,7 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body.dark {
@@ -29,29 +31,34 @@ body.dark {
   color: var(--text-dark);
 }
 
+/* --- Sidebar --- */
 #sidebar {
   width: 250px;
   background: inherit;
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
+  transition: border-color 0.3s ease;
 }
 
 #sidebar.dark {
   border-color: #444;
 }
 
+/* Chat list header */
 #chatListHeader {
   padding: 1em;
   font-weight: 700;
   font-size: 1.2em;
   border-bottom: 1px solid #ccc;
+  transition: border-color 0.3s ease;
 }
 
 #chatListHeader.dark {
   border-color: #444;
 }
 
+/* Chat list */
 #chatList {
   flex: 1;
   overflow-y: auto;
@@ -69,6 +76,7 @@ body.dark {
   color: var(--text-light);
   font-weight: 600;
   user-select: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #chatList li.dark {
@@ -100,9 +108,11 @@ body.dark {
   color: #f44336;
 }
 
+/* New chat form */
 #newChatForm {
   padding: 0.5em 1em;
   border-top: 1px solid #ccc;
+  transition: border-color 0.3s ease;
 }
 
 #newChatForm.dark {
@@ -117,6 +127,7 @@ body.dark {
   font-size: 1em;
   background: var(--input-bg-light);
   color: var(--text-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 #newChatName.dark {
@@ -142,6 +153,7 @@ body.dark {
   background-color: var(--primary-dark);
 }
 
+/* --- Main chat area --- */
 #main {
   flex: 1;
   display: flex;
@@ -158,6 +170,7 @@ body.dark {
   background: inherit;
 }
 
+/* Chat bubbles */
 .bubble {
   max-width: 70%;
   padding: 0.75em 1em;
@@ -165,6 +178,7 @@ body.dark {
   line-height: 1.4;
   white-space: pre-wrap;
   word-wrap: break-word;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .user {
@@ -191,6 +205,7 @@ body.dark .assistant {
   color: var(--text-dark);
 }
 
+/* Status text */
 #status {
   font-size: 0.9em;
   color: gray;
@@ -198,11 +213,13 @@ body.dark .assistant {
   min-height: 1.2em;
 }
 
+/* Input area */
 #input-area {
   display: flex;
   padding: 0.5em 1em;
   border-top: 1px solid #ccc;
   background: inherit;
+  transition: border-color 0.3s ease;
 }
 
 body.dark #input-area {
@@ -220,6 +237,7 @@ body.dark #input-area {
   font-family: inherit;
   background: var(--input-bg-light);
   color: var(--text-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 body.dark #prompt {
@@ -232,6 +250,7 @@ body.dark #prompt {
   border-color: var(--primary);
 }
 
+/* Buttons */
 button {
   margin-left: 0.5em;
   padding: 0 1em;
@@ -248,6 +267,7 @@ button:hover {
   background-color: var(--primary-dark);
 }
 
+/* Controls area */
 #controls {
   display: flex;
   align-items: center;
@@ -256,6 +276,7 @@ button:hover {
   background: inherit;
   gap: 0.5em;
   flex-wrap: wrap;
+  transition: border-color 0.3s ease;
 }
 
 body.dark #controls {
@@ -270,6 +291,7 @@ input[type='text'] {
   border: 1px solid #ccc;
   background: var(--input-bg-light);
   color: var(--text-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 body.dark select,
@@ -295,6 +317,7 @@ body.dark select option {
   background-color: var(--input-bg-dark);
 }
 
+/* Dark mode toggle and voice toggle buttons */
 #darkModeToggle,
 #voiceToggle {
   cursor: pointer;
@@ -302,6 +325,7 @@ body.dark select option {
   border: none;
   font-size: 1.4em;
   color: var(--primary);
+  transition: color 0.3s ease;
 }
 
 #darkModeToggle:hover,
@@ -309,13 +333,12 @@ body.dark select option {
   color: var(--primary-dark);
 }
 
-/* --- Hide the old image URL input --- */
+/* Hide old image URL input */
 #imageUrl {
   display: none !important;
 }
 
-
-/* Mic permission prompt styles */
+/* Mic permission prompt */
 #micPermissionPrompt {
   position: fixed;
   top: 0;
@@ -344,7 +367,7 @@ body.dark select option {
   cursor: pointer;
 }
 
-/* Code box styling for typed code */
+/* Code box styling */
 .code-box {
   background: #2d2d2d;
   border-radius: 8px;
@@ -360,16 +383,16 @@ body.dark select option {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
   color: #ccc;
   align-self: flex-start;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Optional: Light mode variant for code box */
 body:not(.dark) .code-box {
   background: #f5f5f5;
   color: #333;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-/* Scrollbar styling for code box (WebKit) */
+/* Scrollbar styling for code box */
 .code-box::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -384,22 +407,20 @@ body:not(.dark) .code-box {
   background: transparent;
 }
 
-/* Scrollbar styling for Firefox */
 .code-box {
   scrollbar-width: thin;
   scrollbar-color: rgba(100, 100, 100, 0.5) transparent;
 }
 
-/* Responsive: full width code box on small screens */
 @media (max-width: 600px) {
   .code-box {
     max-width: 100%;
   }
 }
 
-/* --- Copy Code Button Styles --- */
+/* Copy Code Button */
 .assistant-message-container > div {
-  position: relative; /* Ensure relative positioning for absolute button */
+  position: relative;
 }
 
 .assistant-message-container button {
@@ -431,3 +452,138 @@ body.dark .assistant-message-container button {
 body.dark .assistant-message-container button:hover {
   background-color: var(--primary-dark);
 }
+
+/* --- Login Modal Styles --- */
+#loginModal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(48, 25, 52, 0.85);
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  display: flex;
+}
+
+#loginModal.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loginModal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#loginModal > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 360px;
+  width: 90%;
+  padding: 24px 32px;
+  background: #2e1a47;
+  color: #e0d7f5;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(128,  0, 255, 0.6);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#loginModal.active > div {
+  transform: scale(1);
+  opacity: 1;
+}
+
+#loginModal input,
+#loginModal button {
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+#loginModal input[type="email"],
+#loginModal input[type="password"] {
+  background: #4b2e7a;
+  color: #f0e9ff;
+  box-shadow: inset 0 0 6px #7a4dff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#loginModal input::placeholder {
+  color: #cbb9ff;
+}
+
+#loginModal input:focus {
+  background: #6a4fcf;
+  outline: none;
+  box-shadow: 0 0 8px #b18aff;
+}
+
+#loginModal button {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  padding: 12px 0;
+  box-shadow: 0 4px 12px rgba(162, 89, 255, 0.7);
+  transition: background 0.3s ease;
+}
+
+#loginModal button:hover {
+  background: linear-gradient(135deg, var(--primary-dark), #4b2e7a);
+}
+
+#loginError {
+  min-height: 1.2em;
+  margin-top: 10px;
+  color: #ff6f91;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+/* Dark mode adjustments for login modal */
+body.dark #loginModal {
+  background: rgba(30, 10, 45, 0.9);
+}
+
+body.dark #loginModal > div {
+  background: #3a1f6e;
+  color: #dcd6f7;
+  box-shadow: 0 0 25px rgba(150, 100, 255, 0.8);
+}
+
+body.dark #loginModal input[type="email"],
+body.dark #loginModal input[type="password"] {
+  background: #5a3d9a;
+  color: #e6e0ff;
+  box-shadow: inset 0 0 8px #9a7aff;
+}
+
+body.dark #loginModal input:focus {
+  background: #7c5fff;
+  box-shadow: 0 0 10px #cbb9ff;
+}
+
+body.dark #loginModal button {
+  background: linear-gradient(135deg, #b18aff, #7c5fff);
+  box-shadow: 0 4px 14px rgba(177, 138, 255, 0.8);
+}
+
+body.dark #loginModal button:hover {
+  background: linear-gradient(135deg, #8a5fff, #5a3d9a);
+}
+
