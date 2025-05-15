@@ -490,7 +490,7 @@ body.dark .assistant-message-container button:hover {
   background: #2e1a47;
   color: #e0d7f5;
   border-radius: 12px;
-  box-shadow: 0 0 20px rgba(128,  0, 255, 0.6);
+    box-shadow: 0 0 20px rgba(128,  0, 255, 0.6);
   transform: scale(0.8);
   opacity: 0;
   transition: transform 0.3s ease, opacity 0.3s ease;
@@ -585,5 +585,42 @@ body.dark #loginModal button {
 
 body.dark #loginModal button:hover {
   background: linear-gradient(135deg, #8a5fff, #5a3d9a);
+}
+
+/* --- Google Sign-In Button Styles --- */
+#googleSignInBtn {
+  background: #4285F4;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 0;
+  margin-top: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
+  font-size: 1em;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.6);
+}
+
+#googleSignInBtn:hover {
+  background: #357ae8;
+}
+
+#googleSignInBtn:focus {
+  outline: 3px solid #a0c3ff;
+  outline-offset: 2px;
+}
+
+/* Dark mode adjustments for Google button */
+body.dark #googleSignInBtn {
+  background: #357ae8;
+  box-shadow: 0 4px 12px rgba(53, 122, 232, 0.8);
+}
+
+body.dark #googleSignInBtn:hover {
+  background: #2a65c7;
 }
 
