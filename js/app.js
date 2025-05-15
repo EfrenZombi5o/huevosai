@@ -211,6 +211,7 @@ async function loadChatToUI() {
   statusDiv.textContent = "";
   await renderMessages();
 }
+
 function parseMessageParts(text) {
   const regex = /```(\w+)?\n([\s\S]*?)```/g;
   let result = [];
@@ -317,11 +318,16 @@ async function renderMessages() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-// Add console log to track message additions
+// Prevent adding duplicate consecutive user messages
 async function addMessage(role, text) {
   if (!currentChatId) return;
-  console.log(`addMessage called: role=${role}, text=${text.slice(0, 30)}`);
   const chat = chats[currentChatId];
+  const lastMsg = chat.messages[chat.messages.length - 1];
+  if (role === "user" && lastMsg?.role === "user" && lastMsg.text === text) {
+    console.log("Duplicate user message ignored:", text);
+    return;
+  }
+  console.log(`addMessage called: role=${role}, text=${text.slice(0, 30)}`);
   chat.messages.push({ role, text });
   if (chat.messages.length > 50) chat.messages.shift();
   await saveChats();
@@ -343,28 +349,30 @@ async function createNewChat(name) {
   newChatNameInput.value = "";
 }
 
-// Updated buildContextPrompt with filtering consecutive duplicate user messages and limiting context size
+// Build prompt context skipping duplicate consecutive user messages and newUserMessage if duplicate
 function buildContextPrompt(newUserMessage) {
   if (!currentChatId) return newUserMessage;
   const chat = chats[currentChatId];
   let context = "";
 
   let lastUserMessage = null;
-  // Take last 20 messages for context
   const recentMessages = chat.messages.slice(-20);
 
   for (const msg of recentMessages) {
     if (msg.role === "user") {
-      if (msg.text === lastUserMessage) {
-        // Skip consecutive duplicate user message
-        continue;
-      }
+      if (msg.text === lastUserMessage) continue;
       lastUserMessage = msg.text;
     }
     context += `${msg.role === "user" ? "User" : "Assistant"}: ${msg.text}\n`;
   }
 
-  context += `User: ${newUserMessage}\nAssistant:`;
+  if (newUserMessage !== lastUserMessage) {
+    context += `User: ${newUserMessage}\nAssistant:`;
+  } else {
+    console.log("buildContextPrompt skipped duplicate new user message");
+    context += `Assistant:`;
+  }
+
   return context;
 }
 
@@ -376,7 +384,6 @@ const debouncedHighlight = debounce((codeEl) => {
 
 // ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
-// Wrap sendQuery with debounce to prevent rapid duplicate calls
 const debouncedSendQuery = debounce(() => {
   sendQuery();
 }, 300);
@@ -458,7 +465,7 @@ async function generateImage() {
     alert("Enter prompt to generate image.");
     return;
   }
-  statusDiv.text = "Generating image...";
+  statusDiv.textContent = "Generating image...";
   try {
     const img = await puter.ai.txt2img(prompt);
     await addMessage("user", prompt);
@@ -651,6 +658,7 @@ onAuthStateChanged(auth, async (user) => {
   // Clean up consecutive duplicate user messages in all chats
   for (const id in chats) {
     chats[id] = removeConsecutiveDuplicateUserMessages(chats[id]);
+    console.log(`Chat ${id} after cleanup:`, chats[id].messages);
   }
 
   if (Object.keys(chats).length === 0) {
