@@ -20,12 +20,18 @@
 <body>
   <!-- Login Modal -->
   <div id="loginModal" style="display:flex;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:10000;">
-    <div style="background:#fff;padding:20px;border-radius:8px;max-width:320px;width:100%;text-align:center;">
+    <div style="background:#fff;padding:20px;border-radius:8px;max-width:320px;width:100%;text-align:center;box-sizing:border-box;">
       <h2>Login or Sign Up</h2>
-      <input type="email" id="emailInput" placeholder="Email" style="width:100%;padding:8px;margin:8px 0;" />
-      <input type="password" id="passwordInput" placeholder="Password" style="width:100%;padding:8px;margin:8px 0;" />
-      <button id="loginBtn" style="width:100%;padding:10px;margin-top:8px;">Login</button>
-      <button id="signupBtn" style="width:100%;padding:10px;margin-top:8px;">Sign Up</button>
+      <input type="email" id="emailInput" placeholder="Email" style="width:100%;padding:8px;margin:8px 0;border-radius:4px;border:1px solid #ccc;" />
+      <input type="password" id="passwordInput" placeholder="Password" style="width:100%;padding:8px;margin:8px 0;border-radius:4px;border:1px solid #ccc;" />
+      <button id="loginBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#6200ee;color:#fff;border-radius:4px;cursor:pointer;">Login</button>
+      <button id="signupBtn" style="width:100%;padding:10px;margin-top:8px;border:none;background:#03dac6;color:#000;border-radius:4px;cursor:pointer;">Sign Up</button>
+
+      <!-- Google Sign-In Button -->
+      <button id="googleSignInBtn" style="width:100%;padding:10px;margin-top:12px;border:none;background:#4285F4;color:#fff;border-radius:4px;cursor:pointer;font-weight:600;">
+        Sign in with Google
+      </button>
+
       <p id="loginError" style="color:red;margin-top:8px;min-height:1.2em;"></p>
     </div>
   </div>
@@ -59,9 +65,6 @@
       <button id="sendBtn" title="Send Message">➡️</button>
     </div>
     <div id="controls">
-      <!-- Removed old image URL input -->
-      <!-- Added image file upload input -->
-
       <select id="modelSelect" title="Select AI Model">
         <optgroup label="DeepSeek Models">
           <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
@@ -87,11 +90,11 @@
   </div>
 
   <!-- Mic permission prompt -->
-  <div id="micPermissionPrompt">
-    <div>
+  <div id="micPermissionPrompt" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:10000;">
+    <div style="background:#fff;padding:20px;border-radius:8px;max-width:320px;width:90%;text-align:center;box-sizing:border-box;">
       <p>This app needs access to your microphone to enable voice input.</p>
-      <button id="allowMicBtn">Allow Microphone</button>
-      <button id="denyMicBtn">Cancel</button>
+      <button id="allowMicBtn" style="margin:8px;padding:10px 20px;border:none;background:#6200ee;color:#fff;border-radius:4px;cursor:pointer;">Allow Microphone</button>
+      <button id="denyMicBtn" style="margin:8px;padding:10px 20px;border:none;background:#ccc;color:#000;border-radius:4px;cursor:pointer;">Cancel</button>
     </div>
   </div>
 
