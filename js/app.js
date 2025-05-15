@@ -60,6 +60,25 @@ function debounce(fn, delay) {
   };
 }
 
+// ------------------- CLEANUP HELPER -------------------
+
+function removeConsecutiveDuplicateUserMessages(chat) {
+  if (!chat?.messages) return chat;
+  const filteredMessages = [];
+  let lastUserMessage = null;
+  for (const msg of chat.messages) {
+    if (msg.role === "user") {
+      if (msg.text === lastUserMessage) {
+        continue; // skip duplicate
+      }
+      lastUserMessage = msg.text;
+    }
+    filteredMessages.push(msg);
+  }
+  chat.messages = filteredMessages;
+  return chat;
+}
+
 // ------------------- FIRESTORE SYNC -------------------
 
 async function saveChatsToFirestore() {
@@ -192,7 +211,6 @@ async function loadChatToUI() {
   statusDiv.textContent = "";
   await renderMessages();
 }
-
 function parseMessageParts(text) {
   const regex = /```(\w+)?\n([\s\S]*?)```/g;
   let result = [];
@@ -440,7 +458,7 @@ async function generateImage() {
     alert("Enter prompt to generate image.");
     return;
   }
-  statusDiv.textContent = "Generating image...";
+  statusDiv.text = "Generating image...";
   try {
     const img = await puter.ai.txt2img(prompt);
     await addMessage("user", prompt);
@@ -628,6 +646,11 @@ onAuthStateChanged(auth, async (user) => {
     chats = await loadChatsFromFirestore(user.uid);
   } else {
     chats = loadChatsFromLocalStorage();
+  }
+
+  // Clean up consecutive duplicate user messages in all chats
+  for (const id in chats) {
+    chats[id] = removeConsecutiveDuplicateUserMessages(chats[id]);
   }
 
   if (Object.keys(chats).length === 0) {
