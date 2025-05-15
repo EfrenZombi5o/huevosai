@@ -426,7 +426,7 @@ async function generateImage() {
     const imgElem = document.createElement("img");
     imgElem.src = img.src;
     imgElem.style.maxWidth = "100%";
-       imgElem.alt = "Generated image";
+    imgElem.alt = "Generated image";
     imgBubble.appendChild(imgElem);
     chatDiv.appendChild(imgBubble);
     chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -445,8 +445,7 @@ function setupVoiceRecognition() {
   if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
     voiceInputBtn.disabled = true;
     voiceInputBtn.title = "Voice input not supported in this browser";
-    statusDiv.textContent = "Voice input not supported in this browser.";
-    return;
+    statusDiv.textContent = "Voice input not supported in this browser return";
   }
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
@@ -481,12 +480,12 @@ function setupVoiceRecognition() {
 }
 
 function showMicPermissionPrompt() {
-  micPermissionPrompt.classList.add("active");
+  micPermissionPrompt.classList.remove("hidden");
   micPermissionPrompt.focus();
 }
 
 function hideMicPermissionPrompt() {
-  micPermissionPrompt.classList.remove("active");
+  micPermissionPrompt.classList.add("hidden");
 }
 
 function toggleVoiceInput() {
