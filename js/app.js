@@ -47,6 +47,7 @@ sidebar.insertBefore(authBtn, sidebar.firstChild);
 let chats = {};
 let currentChatId = null;
 let isSending = false;
+let lastSentUserMessage = null; // Prevent repeated sends
 
 // Utility delay function
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -200,6 +201,7 @@ function renderChatList() {
 function switchChat(id) {
   if (!chats[id]) return;
   currentChatId = id;
+  lastSentUserMessage = null; // Reset last sent message on chat switch
   renderChatList();
   loadChatToUI();
 }
@@ -344,6 +346,7 @@ async function createNewChat(name) {
     messages: [],
     model: "deepseek-chat",
   };
+  lastSentUserMessage = null; // Reset last sent message on new chat
   await saveChats();
   switchChat(id);
   newChatNameInput.value = "";
@@ -394,16 +397,20 @@ async function sendQuery() {
     console.log("sendQuery ignored because isSending is true");
     return;
   }
-  isSending = true;
-
   const prompt = promptInput.value.trim();
-  const model = modelSelect.value;
 
   if (!prompt) {
     alert("Please enter a message.");
-    isSending = false;
     return;
   }
+
+  if (prompt === lastSentUserMessage) {
+    console.log("sendQuery ignored because prompt is duplicate of last sent message");
+    return;
+  }
+
+  isSending = true;
+  lastSentUserMessage = prompt;
 
   sendBtn.disabled = true;
   promptInput.disabled = true;
@@ -415,13 +422,13 @@ async function sendQuery() {
     await renderMessages();
 
     if (currentChatId) {
-      chats[currentChatId].model = model;
+      chats[currentChatId].model = modelSelect.value;
       await saveChats();
     }
 
     const contextPrompt = buildContextPrompt(prompt);
 
-    const response = await puter.ai.chat(contextPrompt, { model, stream: true });
+    const response = await puter.ai.chat(contextPrompt, { model: modelSelect.value, stream: true });
 
     if (response[Symbol.asyncIterator]) {
       let assistantReply = "";
