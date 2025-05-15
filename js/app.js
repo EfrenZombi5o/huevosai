@@ -463,6 +463,7 @@ async function sendQuery() {
     promptInput.disabled = false;
     promptInput.focus();
     isSending = false;
+    lastSentUserMessage = null; // Reset here to allow sending same message again after response
   }
 }
 
