@@ -353,9 +353,8 @@ body.dark select option {
   background-color: var(--input-bg-dark);
 }
 
-/* Dark mode toggle and voice toggle buttons */
-#darkModeToggle,
-#voiceToggle {
+/* Dark mode toggle button */
+#darkModeToggle {
   cursor: pointer;
   background: none;
   border: none;
@@ -364,8 +363,7 @@ body.dark select option {
   transition: color 0.3s ease;
 }
 
-#darkModeToggle:hover,
-#voiceToggle:hover {
+#darkModeToggle:hover {
   color: var(--primary-dark);
 }
 
@@ -583,10 +581,5 @@ body.dark select option {
   font-size: 0.9rem;
   text-align: center;
   margin-top: 0.25rem;
-}
-
-/* Hide mic permission prompt by default */
-#micPermissionPrompt.hidden {
-  display: none !important;
 }
 
