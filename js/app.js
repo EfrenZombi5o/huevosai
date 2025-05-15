@@ -361,31 +361,41 @@ async function sendQuery() {
 
   try {
     const contextPrompt = buildContextPrompt(prompt);
-    // Replace puter.ai.chat with your actual streaming API call
-    const responseStream = await puter.ai.chat(contextPrompt, { model, stream: true });
 
-    let assistantReply = "";
+    const response = await puter.ai.chat(contextPrompt, { model, stream: true });
 
-    addMessage("assistant", "");
-    await renderMessages();
+    console.log("Response from puter.ai.chat:", response);
+    console.log("Is response async iterable?", !!response[Symbol.asyncIterator]);
 
-    const chat = chats[currentChatId];
-    let lastMsg = chat.messages[chat.messages.length - 1];
+    if (response[Symbol.asyncIterator]) {
+      // Streaming response
+      let assistantReply = "";
+      addMessage("assistant", "");
+      await renderMessages();
 
-    for await (const part of responseStream) {
-      if (part?.text) {
-        assistantReply += part.text;
-        lastMsg.text = assistantReply;
-        saveChats();
+      const chat = chats[currentChatId];
+      let lastMsg = chat.messages[chat.messages.length - 1];
 
-        await renderMessages();
-
-        chatDiv.scrollTop = chatDiv.scrollHeight;
+      for await (const part of response) {
+        if (part?.text) {
+          assistantReply += part.text;
+          lastMsg.text = assistantReply;
+          saveChats();
+          await renderMessages();
+          chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
       }
-    }
 
-    statusDiv.textContent = "";
-    if (assistantVoiceEnabled) speakText(assistantReply);
+      statusDiv.textContent = "";
+      if (assistantVoiceEnabled) speakText(assistantReply);
+    } else {
+      // Non-streaming response fallback
+      const assistantReply = response.message?.content || response;
+      addMessage("assistant", assistantReply);
+      await renderMessages();
+      statusDiv.textContent = "";
+      if (assistantVoiceEnabled) speakText(assistantReply);
+    }
   } catch (e) {
     console.error("Error in sendQuery:", e);
     statusDiv.textContent = "Error: " + (e.message || JSON.stringify(e));
@@ -400,7 +410,6 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
-    // Replace puter.ai.txt2img with your actual image generation API call
     const img = await puter.ai.txt2img(prompt);
     addMessage("user", prompt);
     addMessage("assistant", "[Image generated below]");
