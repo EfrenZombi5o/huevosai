@@ -8,6 +8,8 @@ import {
   doc,
   getDoc,
   setDoc,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "./firebase-app.js";
 
 // Elements
@@ -37,6 +39,7 @@ const passwordInput = document.getElementById("passwordInput");
 const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn");
 const loginError = document.getElementById("loginError");
+const googleSignInBtn = document.getElementById("googleSignInBtn");
 
 // Auth button in sidebar
 const authBtn = document.createElement("button");
@@ -331,6 +334,7 @@ const debouncedHighlight = debounce((codeEl) => {
     hljs.highlightElement(codeEl);
   }
 }, 150);
+
 // ------------------- SEND QUERY & IMAGE GENERATION -------------------
 
 async function sendQuery() {
@@ -526,23 +530,11 @@ function loadDarkMode() {
 // ------------------- LOGIN MODAL SHOW/HIDE -------------------
 
 function showLogin() {
-  loginModal.classList.remove("hidden");
-  requestAnimationFrame(() => {
-    loginModal.classList.add("active");
-  });
+  loginModal.style.display = "flex";
 }
 
 function hideLogin() {
-  loginModal.classList.remove("active");
-  loginModal.addEventListener(
-    "transitionend",
-    () => {
-      if (!loginModal.classList.contains("active")) {
-        loginModal.classList.add("hidden");
-      }
-    },
-    { once: true }
-  );
+  loginModal.style.display = "none";
 }
 
 // Close login modal when clicking outside the form
@@ -551,6 +543,7 @@ loginModal.addEventListener("click", (e) => {
     hideLogin();
   }
 });
+
 // ------------------- AUTHENTICATION -------------------
 
 // Update auth button text and behavior based on user state
@@ -603,6 +596,21 @@ signupBtn.addEventListener("click", async () => {
     passwordInput.value = "";
   } catch (e) {
     loginError.textContent = e.message;
+  }
+});
+
+// Google Sign-In handler
+const provider = new GoogleAuthProvider();
+
+googleSignInBtn.addEventListener("click", async () => {
+  loginError.textContent = "";
+  try {
+    await signInWithPopup(auth, provider);
+    hideLogin();
+    emailInput.value = "";
+    passwordInput.value = "";
+  } catch (e) {
+    loginError.textContent = e.message || "Google sign-in failed.";
   }
 });
 
@@ -666,7 +674,7 @@ window.addEventListener("DOMContentLoaded", () => {
     statusDiv.textContent = "Microphone permission denied.";
   });
 
-  // Show modal on page load
+  // Show login modal on page load
   window.addEventListener("load", () => {
     showLogin();
   });
