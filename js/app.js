@@ -475,11 +475,20 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
+    // Call the image generation API
     const img = await puter.ai.txt2img(prompt);
+
+    // Check if img and img.src exist
+    if (!img || !img.src) {
+      throw new Error("Invalid image response from API");
+    }
+
+    // Add user message and assistant placeholder
     await addMessage("user", prompt);
     await addMessage("assistant", "[Image generated below]");
     await renderMessages();
 
+    // Create and append the image element
     const imgBubble = document.createElement("div");
     imgBubble.className = "bubble assistant";
     const imgElem = document.createElement("img");
@@ -494,7 +503,7 @@ async function generateImage() {
     promptInput.value = "";
   } catch (e) {
     console.error("Error generating image:", e);
-    statusDiv.textContent = "Error generating image.";
+    statusDiv.textContent = "Error generating image: " + (e.message || JSON.stringify(e));
   }
 }
 
