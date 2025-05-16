@@ -243,6 +243,18 @@ async function createMessageElement(msg) {
     return bubble;
   }
 
+  if (msg.type === "image") {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble assistant";
+    const img = document.createElement("img");
+    img.src = msg.text;
+    img.alt = "Generated image";
+    img.style.maxWidth = "100%";
+    bubble.appendChild(img);
+    return bubble;
+  }
+
+  // Existing code for text + code blocks
   const parts = parseMessageParts(msg.text);
 
   const container = document.createElement("div");
@@ -321,7 +333,7 @@ async function renderMessages() {
 }
 
 // Prevent adding duplicate consecutive user messages
-async function addMessage(role, text) {
+async function addMessage(role, text, type = "text") {
   if (!currentChatId) return;
   const chat = chats[currentChatId];
   const lastMsg = chat.messages[chat.messages.length - 1];
@@ -329,8 +341,7 @@ async function addMessage(role, text) {
     console.log("Duplicate user message ignored:", text);
     return;
   }
-  console.log(`addMessage called: role=${role}, text=${text.slice(0, 30)}`);
-  chat.messages.push({ role, text });
+  chat.messages.push({ role, text, type });
   if (chat.messages.length > 50) chat.messages.shift();
   await saveChats();
 }
@@ -475,29 +486,16 @@ async function generateImage() {
   }
   statusDiv.textContent = "Generating image...";
   try {
-    // Call the image generation API
-    const img = await puter.ai.txt2img(prompt);
+    // Use real API (testMode = false)
+    const imgElem = await puter.ai.txt2img(prompt, false);
 
-    // Check if img and img.src exist
-    if (!img || !img.src) {
-      throw new Error("Invalid image response from API");
-    }
+    // Extract data URL from the returned <img> element
+    const dataUrl = imgElem.src;
 
-    // Add user message and assistant placeholder
+    // Save user prompt and assistant image message
     await addMessage("user", prompt);
-    await addMessage("assistant", "[Image generated below]");
+    await addMessage("assistant", dataUrl, "image");
     await renderMessages();
-
-    // Create and append the image element
-    const imgBubble = document.createElement("div");
-    imgBubble.className = "bubble assistant";
-    const imgElem = document.createElement("img");
-    imgElem.src = img.src;
-    imgElem.style.maxWidth = "100%";
-    imgElem.alt = "Generated image";
-    imgBubble.appendChild(imgElem);
-    chatDiv.appendChild(imgBubble);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
 
     statusDiv.textContent = "Image generated.";
     promptInput.value = "";
