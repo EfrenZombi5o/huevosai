@@ -20,7 +20,6 @@ const chatDiv = document.getElementById("chat");
 const promptInput = document.getElementById("prompt");
 const sendBtn = document.getElementById("sendBtn");
 const modelSelect = document.getElementById("modelSelect");
-const generateImageBtn = document.getElementById("generateImageBtn");
 const darkModeToggle = document.getElementById("darkModeToggle");
 const statusDiv = document.getElementById("status");
 const sidebar = document.getElementById("sidebar");
@@ -243,17 +242,6 @@ async function createMessageElement(msg) {
     return bubble;
   }
 
-  if (msg.type === "image") {
-    const bubble = document.createElement("div");
-    bubble.className = "bubble assistant";
-    const img = document.createElement("img");
-    img.src = msg.text;
-    img.alt = "Generated image";
-    img.style.maxWidth = "100%";
-    bubble.appendChild(img);
-    return bubble;
-  }
-
   // Existing code for text + code blocks
   const parts = parseMessageParts(msg.text);
 
@@ -396,7 +384,7 @@ const debouncedHighlight = debounce((codeEl) => {
   }
 }, 150);
 
-// ------------------- SEND QUERY & IMAGE GENERATION -------------------
+// ------------------- SEND QUERY -------------------
 
 const debouncedSendQuery = debounce(() => {
   sendQuery();
@@ -461,6 +449,7 @@ async function sendQuery() {
 
       statusDiv.textContent = "";
     } else {
+      // Non-streaming response fallback
       const assistantReply = response.message?.content || response;
       await addMessage("assistant", assistantReply);
       await renderMessages();
@@ -475,33 +464,6 @@ async function sendQuery() {
     promptInput.focus();
     isSending = false;
     lastSentUserMessage = null; // Reset here to allow sending same message again after response
-  }
-}
-
-async function generateImage() {
-  const prompt = promptInput.value.trim();
-  if (!prompt) {
-    alert("Enter prompt to generate image.");
-    return;
-  }
-  statusDiv.textContent = "Generating image...";
-  try {
-    // Use real API (testMode = false)
-    const imgElem = await puter.ai.txt2img(prompt, false);
-
-    // Extract data URL from the returned <img> element
-    const dataUrl = imgElem.src;
-
-    // Save user prompt and assistant image message
-    await addMessage("user", prompt);
-    await addMessage("assistant", dataUrl, "image");
-    await renderMessages();
-
-    statusDiv.textContent = "Image generated.";
-    promptInput.value = "";
-  } catch (e) {
-    console.error("Error generating image:", e);
-    statusDiv.textContent = "Error generating image: " + (e.message || JSON.stringify(e));
   }
 }
 
@@ -704,11 +666,6 @@ window.addEventListener("DOMContentLoaded", () => {
       debouncedSendQuery();
     });
     sendBtn.dataset.listenerAttached = "true";
-  }
-
-  if (!generateImageBtn.dataset.listenerAttached) {
-    generateImageBtn.addEventListener("click", generateImage);
-    generateImageBtn.dataset.listenerAttached = "true";
   }
 
   if (!darkModeToggle.dataset.listenerAttached) {
