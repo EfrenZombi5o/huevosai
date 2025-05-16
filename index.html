@@ -16,6 +16,17 @@
 
   <!-- Your custom CSS -->
   <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* Make model select dropdown scrollable and wider for many options */
+    #modelSelect {
+      max-height: 300px;
+      overflow-y: auto;
+      min-width: 280px;
+      font-size: 1em;
+      padding: 0.3em 0.5em;
+    }
+  </style>
 </head>
 <body>
   <!-- Sidebar toggle button -->
@@ -52,20 +63,58 @@
     <div id="status" aria-live="assertive" role="status"></div>
     <div id="input-area">
       <textarea id="prompt" rows="2" placeholder="Type your message..." autocomplete="off" aria-label="Message input"></textarea>
-      <!-- Removed voiceInputBtn -->
       <button id="sendBtn" title="Send Message" aria-label="Send Message">➡️</button>
     </div>
     <div id="controls">
-      <select id="modelSelect" title="Select AI Model" aria-label="Select AI Model">
+      <select id="modelSelect" title="Select AI Model" aria-label="Select AI Model" size="1">
         <optgroup label="DeepSeek Models">
           <option value="deepseek-chat">DeepSeek Chat (DeepSeek V3)</option>
           <option value="deepseek-reasoner">DeepSeek Reasoner (DeepSeek R1)</option>
         </optgroup>
+
         <optgroup label="Gemini Models">
           <option value="google/gemini-2.5-pro-exp-03-25:free">Gemini 2.5 Pro</option>
           <option value="google/gemini-2.0-flash-lite-001">Gemini 2.0 Flash Lite</option>
           <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash</option>
         </optgroup>
+
+        <optgroup label="Claude Models">
+          <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="claude-3-7-sonnet" selected>Claude 3.7 Sonnet</option>
+        </optgroup>
+
+        <optgroup label="Meta Llama Models">
+          <option value="meta-llama/llama-4-maverick">Llama 4 Maverick</option>
+          <option value="meta-llama/llama-4-scout">Llama 4 Scout</option>
+          <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B Instruct</option>
+          <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B Instruct</option>
+        </optgroup>
+
+        <optgroup label="OpenRouter Claude Models">
+          <option value="openrouter:anthropic/claude-3.5-sonnet">Anthropic Claude 3.5 Sonnet (OpenRouter)</option>
+          <option value="openrouter:anthropic/claude-3.7-sonnet">Anthropic Claude 3.7 Sonnet (OpenRouter)</option>
+        </optgroup>
+
+        <optgroup label="OpenRouter Meta Llama Models">
+          <option value="openrouter:meta-llama/llama-4-maverick">Llama 4 Maverick (OpenRouter)</option>
+          <option value="openrouter:meta-llama/llama-4-scout">Llama 4 Scout (OpenRouter)</option>
+          <option value="openrouter:meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B Instruct (OpenRouter)</option>
+          <option value="openrouter:meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B Instruct (OpenRouter)</option>
+        </optgroup>
+
+        <optgroup label="OpenRouter Other Models">
+          <option value="openrouter:mistral/mistral-7b-instruct">Mistral 7B Instruct</option>
+          <option value="openrouter:mistralai/mistral-7b-instruct-v0.1">Mistral 7B Instruct v0.1</option>
+          <option value="openrouter:google/gemini-pro-1.5">Google Gemini Pro 1.5</option>
+          <option value="openrouter:openai/gpt-4o-mini">OpenAI GPT-4o Mini</option>
+          <option value="openrouter:cohere/command-r-plus">Cohere Command R Plus</option>
+          <option value="openrouter:openrouter/quasar-alpha">OpenRouter Quasar Alpha</option>
+          <option value="openrouter:qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B Instruct</option>
+          <option value="openrouter:microsoft/phi-4">Microsoft Phi 4</option>
+          <option value="openrouter:nvidia/llama-3.1-nemotron-70b-instruct">NVIDIA Llama 3.1 Nemotron 70B Instruct</option>
+          <option value="openrouter:openchat/openchat-7b">OpenChat 7B</option>
+        </optgroup>
+
         <optgroup label="OpenAI-Compatible Models">
           <option value="gpt-4o">GPT-4o</option>
           <option value="gpt-4.1">GPT-4.1</option>
@@ -74,8 +123,7 @@
           <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
         </optgroup>
       </select>
-      <button id="generateImageBtn" title="Generate Image" aria-label="Generate Image">🖼️</button>
-      <!-- Removed voiceToggle button -->
+
       <button id="darkModeToggle" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">🌙</button>
     </div>
   </div>
