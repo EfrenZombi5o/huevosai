@@ -14,6 +14,13 @@
   --input-bg-dark: #4b2e7a; /* dark purple background */
 }
 
+/* Global box-sizing for easier sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* --- Base styles --- */
 body {
   margin: 0;
@@ -50,8 +57,10 @@ body.dark {
   transition: background-color 0.3s ease;
 }
 
-#sidebarToggle:hover {
+#sidebarToggle:hover,
+#sidebarToggle:focus-visible {
   background: var(--primary-dark);
+  outline: none;
 }
 
 /* --- Sidebar --- */
@@ -140,8 +149,10 @@ body.dark {
   flex-shrink: 0;
 }
 
-#chatList li .delete-btn:hover {
+#chatList li .delete-btn:hover,
+#chatList li .delete-btn:focus-visible {
   color: #f44336;
+  outline: none;
 }
 
 /* New chat form */
@@ -188,8 +199,10 @@ body.dark {
   transition: background-color 0.3s ease;
 }
 
-#createChatBtn:hover {
+#createChatBtn:hover,
+#createChatBtn:focus-visible {
   background-color: var(--primary-dark);
+  outline: none;
 }
 
 /* --- Main chat area --- */
@@ -215,6 +228,8 @@ body.dark {
   flex-direction: column;
   gap: 0.75em;
   background: inherit;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Chat bubbles */
@@ -295,6 +310,8 @@ body.dark #prompt {
 
 #prompt:focus {
   border-color: var(--primary);
+  outline-offset: 2px;
+  outline: 2px solid var(--primary);
 }
 
 /* Buttons */
@@ -311,8 +328,10 @@ button {
   user-select: none;
 }
 
-button:hover {
+button:hover,
+button:focus-visible {
   background-color: var(--primary-dark);
+  outline: none;
 }
 
 /* Controls area */
@@ -375,8 +394,10 @@ body.dark select option {
   transition: color 0.3s ease;
 }
 
-#darkModeToggle:hover {
+#darkModeToggle:hover,
+#darkModeToggle:focus-visible {
   color: var(--primary-dark);
+  outline: none;
 }
 
 /* --- Responsive Sidebar and Layout --- */
@@ -469,7 +490,7 @@ body.dark select option {
   50% {
     box-shadow:
       0 0 30px rgba(180, 0, 255, 0.9),
-      0 0 50px rgba(180, 0, 255, 0.6),
+      0 0 50px rgba(180, 0, 255,      0.6),
       0 0 70px rgba(220, 0, 255, 0.4);
   }
 }
@@ -555,6 +576,8 @@ body.dark select option {
 #loginModal input:focus {
   background: #6a4fcf;
   color: white;
+  outline-offset: 2px;
+  outline: 2px solid var(--primary);
 }
 
 /* Buttons */
@@ -576,8 +599,10 @@ body.dark select option {
   color: white;
 }
 
-#loginBtn:hover {
+#loginBtn:hover,
+#loginBtn:focus-visible {
   background: #4b2e7a;
+  outline: none;
 }
 
 #signupBtn {
@@ -585,8 +610,10 @@ body.dark select option {
   color: white;
 }
 
-#signupBtn:hover {
+#signupBtn:hover,
+#signupBtn:focus-visible {
   background: #6200ee;
+  outline: none;
 }
 
 #googleSignInBtn {
@@ -594,8 +621,10 @@ body.dark select option {
   color: white;
 }
 
-#googleSignInBtn:hover {
+#googleSignInBtn:hover,
+#googleSignInBtn:focus-visible {
   background: #3367d6;
+  outline: none;
 }
 
 /* Error message */
@@ -607,40 +636,4 @@ body.dark select option {
   text-align: center;
   margin-top: 0.25rem;
 }
-/* Images inside assistant chat bubbles */
-.bubble.assistant img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  margin-top: 8px;
-  display: block;
-  box-shadow: 0 2px 8px rgba(106, 79, 207, 0.3);
-  user-select: none;
-  pointer-events: auto;
-  cursor: default;
-  transition: box-shadow 0.3s ease;
-}
 
-.bubble.assistant img:hover {
-  box-shadow: 0 4px 16px rgba(106, 79, 207, 0.5);
-}
-
-/* Optional: prevent images from being draggable */
-.bubble.assistant img {
-  -webkit-user-drag: none;
-  user-drag: none;
-}
-
-/* Responsive fix: ensure chat container scrolls properly */
-#chat {
-  word-break: break-word;
-}
-
-/* Optional: add a subtle border or background behind images */
-.bubble.assistant img {
-  background-color: var(--assistant-bubble-light);
-}
-
-body.dark .bubble.assistant img {
-  background-color: var(--assistant-bubble-dark);
-}
