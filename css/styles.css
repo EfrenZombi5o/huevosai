@@ -607,3 +607,40 @@ body.dark select option {
   text-align: center;
   margin-top: 0.25rem;
 }
+/* Images inside assistant chat bubbles */
+.bubble.assistant img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin-top: 8px;
+  display: block;
+  box-shadow: 0 2px 8px rgba(106, 79, 207, 0.3);
+  user-select: none;
+  pointer-events: auto;
+  cursor: default;
+  transition: box-shadow 0.3s ease;
+}
+
+.bubble.assistant img:hover {
+  box-shadow: 0 4px 16px rgba(106, 79, 207, 0.5);
+}
+
+/* Optional: prevent images from being draggable */
+.bubble.assistant img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* Responsive fix: ensure chat container scrolls properly */
+#chat {
+  word-break: break-word;
+}
+
+/* Optional: add a subtle border or background behind images */
+.bubble.assistant img {
+  background-color: var(--assistant-bubble-light);
+}
+
+body.dark .bubble.assistant img {
+  background-color: var(--assistant-bubble-dark);
+}
